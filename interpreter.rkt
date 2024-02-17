@@ -41,7 +41,7 @@
 
 (define addBinding
   (lambda (state var value)
-    (cons (add-last (car state) var) (cons (add-last (car (cdr state)) value) '()))))
+    (cons (add-last (car state) var) (cons (add-last (cadr state) value) '()))))
 
 (define getBinding
   (lambda (state var)
@@ -54,11 +54,12 @@
 (define removeBinding
   (lambda (state var)
     (let ([n (index-of (car state) var)])
-      (cons (remove-n (car state) n) (cons (remove-n (car (cdr state)) n) '())))))
+      (cons (remove-n (car state) n) (cons (remove-n (cadr state) n) '())))))
 
 (define updateBinding
   (lambda (state var value)
-    '()))
+    (let ([n (index-of (car state) var)])
+      (cons (car state) (cons (update-n (cadr state) n value) '())))))
 
 
 ; --------------------- HELPER FUNCTIONS ---------------------
@@ -76,7 +77,7 @@
 (define index-of-acc
   (lambda (ls value acc)
     (cond
-      [(null? ls) -1]
+      [(null? ls) (error (format "Could not find ~a in list." value))]
       [(eq? (car ls) value) acc]
       [else (index-of-acc (cdr ls) value (+ acc 1))])))
 
@@ -86,3 +87,10 @@
     (if (zero? n)
         (cdr ls)
         (cons (car ls) (remove-n (cdr ls) (- n 1))))))
+
+; Update the nth element of the list and return the updated list
+(define update-n
+  (lambda (ls n value)
+    (if (zero? n)
+        (cons value (cdr ls))
+        (cons (car ls) (update-n (cdr ls) (- n 1) value)))))
