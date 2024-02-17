@@ -45,7 +45,11 @@
       [(eq? (operator exp) '-) (- (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
       [(eq? (operator exp) '*) (* (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
       [(eq? (operator exp) '/) (quotient (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
-      [(eq? (operator exp) '%) (remainder (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))])))
+      [(eq? (operator exp) '%) (remainder (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
+      [else (let ((value (getBinding state exp)))
+              (if (number? value)
+                  value
+                  (error "incorrect type")))])))
 
 (define operator car)
 (define leftoperand cadr)
@@ -149,7 +153,7 @@
 
 (define M_return
   (lambda (statement state)
-    (updateBinding (M_declare '(var return) state) 'return (cadr statement))))
+    (updateBinding (M_declare '(var return) state) 'return (M_integer (cadr statement) state))))
 
 (define M_assignment
   (lambda (statement state)
