@@ -71,10 +71,12 @@
 
 (define updateBinding
   (lambda (state var value)
-    (let ([n (index-of (car state) var)])
-      (if (eq? n -1)
-          (error "using before declaring")
-          (cons (car state) (cons (update-n (cadr state) n value) '()))))))
+    (let* ([n (index-of (car state) var)]
+          [prev (get-n (cadr state) n)])
+      (cond
+        [(eq? n -1) (error "using before declaring")]
+        [(or (eq? prev 'error) (same-type prev value)) (cons (car state) (cons (update-n (cadr state) n value) '()))]
+        [else (error (format "assigning incorrect type ~a ~a" prev value))]))))
 
 
 ; --------------------- HELPER FUNCTIONS ---------------------
@@ -96,6 +98,14 @@
       [(eq? (car ls) value) acc]
       [else (index-of-acc (cdr ls) value (+ acc 1))])))
 
+; Get the nth element of the list and return its value
+(define get-n
+  (lambda (ls n)
+    (cond
+      [(null? ls) (error "list index out of range")]
+      [(zero? n) (car ls)]
+      [else (get-n (cdr ls) (- n 1))])))
+
 ; Remove the nth element of the list and return the updated list
 (define remove-n
   (lambda (ls n)
@@ -109,6 +119,14 @@
     (if (zero? n)
         (cons value (cdr ls))
         (cons (car ls) (update-n (cdr ls) (- n 1) value)))))
+
+; Check if two values a and b are the same type
+(define same-type
+  (lambda (a b)
+    (cond
+      [(and (number? a) (number? b)) #t]
+      [(and (boolean? a) (boolean? b)) #t]
+      [else #f])))
 
 
 ; --------------------- STATE FUNCTIONS ---------------------
