@@ -142,8 +142,8 @@
   (lambda (statement state)
     [cond
       [(equal? (car statement) 'var)    (M_declare statement state)]
-      [(equal? (car statement) '=)      (M_assignment statement state)] ;(M_assign statement state)]
-      [(equal? (car statement) 'return) (M_return statement state)] ;TODO return statement
+      [(equal? (car statement) '=)      (M_assignment statement state)]
+      [(equal? (car statement) 'return) (M_return statement state)]
       [(equal? (car statement) 'if)     (M_if statement state)]
       [(equal? (car statement) 'while)  (M_while statement state)]]))
 
@@ -153,10 +153,7 @@
 
 (define M_assignment
   (lambda (statement state)
-    (let ((var (cadr statement))
-          (value (M_integer (caddr statement) state))) ; the value from evaluating the expression
-                                                       ; TODO: only evalues exp returning an int
-      (updateBinding state var value))))
+    (updateBinding state (leftoperand statement) (rightoperand statement))))
 
 (define M_while
   (lambda (statement state)
@@ -179,5 +176,28 @@
     (let ((name (cadr statement)))
       (if (null? (cddr statement))
           (addBinding state name 'error)
-          (addBinding state name 'TODO))))) ; TODO: Handle cases like var x = 2 * 5 + 4
+          (addBinding state name (M_value statement state))))))
+
+(define M_value
+  (lambda (statement state)
+    (cond
+      [(eq? (operator statement) '+) (M_integer statement state)]
+      [(eq? (operator statement) '-) (M_integer statement state)]
+      [(eq? (operator statement) '*) (M_integer statement state)]
+      [(eq? (operator statement) '/) (M_integer statement state)]
+      [(eq? (operator statement) '%) (M_integer statement state)]
+      [(eq? (operator statement) '==) (M_boolean statement state)]
+      [(eq? (operator statement) '!=) (M_boolean statement state)]
+      [(eq? (operator statement) '<) (M_boolean statement state)]
+      [(eq? (operator statement) '>) (M_boolean statement state)]
+      [(eq? (operator statement) '<=) (M_boolean statement state)]
+      [(eq? (operator statement) '>=) (M_boolean statement state)]
+      [(eq? (operator statement) '&&) (M_boolean statement state)]
+      [(eq? (operator statement) '||) (M_boolean statement state)]
+      [(eq? (operator statement) '!) (M_boolean statement state)]
+      [else (error "invalid operator")])))
+
+
+
+        
   
