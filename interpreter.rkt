@@ -36,6 +36,13 @@
 (define leftoperand cadr)
 (define rightoperand caddr)
 
+
+; --------------------- BINDING FUNCTIONS ---------------------
+
+(define addBinding
+  (lambda (state var value)
+    (cons (add-last (car state) var) (cons (add-last (car (cdr state)) value) '()))))
+
 (define getBinding
   (lambda (state var)
     (cond
@@ -43,22 +50,6 @@
       [(not (eq? (caar state) var)) (getBinding (cons (cdar state) (cons (cdadr state) '())) var)]
       [(eq? (caadr state) 'error) (error "using before assigning")]
       [else (caadr state)])))
-
-(define addBinding
-  (lambda (state var value)
-    (cons (addBinding-rec (car state) var) (cons (addBinding-rec (car (cdr state)) value) '()))))
-
-(define addBinding-rec
-  (lambda (ls value)
-    (if (null? ls)
-        (cons value '())
-        (cons (car ls) (addBinding-rec (cdr ls) value)))))
-
-; --------------------- BINDING FUNCTIONS ---------------------
-
-(define addBinding
-  (lambda (state var value)
-    (cons (add-last (car state) var) (cons (add-last (car (cdr state)) value) '()))))
 
 (define removeBinding
   (lambda (state var)
