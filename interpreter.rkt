@@ -35,11 +35,11 @@
   (lambda (exp state)
     (cond
       [(number? exp) exp]
-      [(eq? (operator exp) '+) (+ (M_integer (leftoperand exp)) (M_integer (rightoperand exp)))]
-      [(eq? (operator exp) '-) (- (M_integer (leftoperand exp)) (M_integer (rightoperand exp)))]
-      [(eq? (operator exp) '*) (* (M_integer (leftoperand exp)) (M_integer (rightoperand exp)))]
-      [(eq? (operator exp) '/) (quotient (M_integer (leftoperand exp)) (M_integer (rightoperand exp)))]
-      [(eq? (operator exp) '%) (remainder (M_integer (leftoperand exp)) (M_integer (rightoperand exp)))]
+      [(eq? (operator exp) '+) (+ (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
+      [(eq? (operator exp) '-) (- (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
+      [(eq? (operator exp) '*) (* (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
+      [(eq? (operator exp) '/) (quotient (M_integer (leftoperand exp) state) (M_integer (rightoperand exp)) state)]
+      [(eq? (operator exp) '%) (remainder (M_integer (leftoperand exp) state) (M_integer (rightoperand exp)) state)]
       [else (let ((value (getBinding state exp)))
               (if (number? value)
                   value
@@ -174,4 +174,7 @@
 (define M_declare
   (lambda (statement state)
     (let ((name (cadr statement)))
-      (addBinding state name 'error))))
+      (if (null? (cddr statement))
+          (addBinding state name 'error)
+          (addBinding state name 'TODO))))) ; TODO: Handle cases like var x = 2 * 5 + 4
+  
