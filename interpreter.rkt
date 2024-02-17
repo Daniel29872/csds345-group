@@ -4,4 +4,10 @@
 
 (define interpret
   (lambda (filename)
-    (parser filename)))
+    (interpret-rec (parser filename))))
+
+(define interpret-rec
+  (lambda (syntax-tree)
+    (cond
+      [(null? syntax-tree) '()]
+      [else '()])))
