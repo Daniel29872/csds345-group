@@ -49,7 +49,10 @@
 
 (define addBinding
   (lambda (state var value)
-    (cons (add-last (car state) var) (cons (add-last (cadr state) value) '()))))
+    (let ([n (index-of (car state) var)])
+      (if (eq? n -1)
+          (cons (add-last (car state) var) (cons (add-last (cadr state) value) '()))
+          (error "already declared variable")))))
 
 (define getBinding
   (lambda (state var)
@@ -62,12 +65,16 @@
 (define removeBinding
   (lambda (state var)
     (let ([n (index-of (car state) var)])
-      (cons (remove-n (car state) n) (cons (remove-n (cadr state) n) '())))))
+      (if (eq? n -1)
+          (error "using before declaring")
+          (cons (remove-n (car state) n) (cons (remove-n (cadr state) n) '()))))))
 
 (define updateBinding
   (lambda (state var value)
     (let ([n (index-of (car state) var)])
-      (cons (car state) (cons (update-n (cadr state) n value) '())))))
+      (if (eq? n -1)
+          (error "using before declaring")
+          (cons (car state) (cons (update-n (cadr state) n value) '()))))))
 
 
 ; --------------------- HELPER FUNCTIONS ---------------------
@@ -85,7 +92,7 @@
 (define index-of-acc
   (lambda (ls value acc)
     (cond
-      [(null? ls) (error (format "Could not find ~a in list." value))]
+      [(null? ls) -1]
       [(eq? (car ls) value) acc]
       [else (index-of-acc (cdr ls) value (+ acc 1))])))
 
@@ -109,8 +116,8 @@
 (define M_statement
   (lambda (statement state)
     [cond
-      [(equal? (car statement) 'var)    'TODO] ;TODO variable declaration
-      [(equal? (car statement) '=)      'TODO] ;TODO variable assignment
+      [(equal? (car statement) 'var)    (M_declare statement state)]
+      [(equal? (car statement) '=)      'TODO] ;(M_assign statement state)]
       [(equal? (car statement) 'return) 'TODO] ;TODO return statement
       [(equal? (car statement) 'if)     (M_if statement state)]
       [(equal? (car statement) 'while)  (M_while statement state)]]))
@@ -130,3 +137,14 @@
       (if (M_boolean condition state)
           (M_while statement (M_statement body-stmt state))
           state))))
+
+;(define M_assign
+;  (lambda (statement state)
+;    (let ((var (cadr statement))
+;          (value (caddr statement)))
+;      (if (
+
+(define M_declare
+  (lambda (statement state)
+    (let ((name (cadr statement)))
+      (addBinding state name 'error))))
