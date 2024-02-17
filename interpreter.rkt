@@ -20,7 +20,9 @@
       [(eq? (operator exp) '>=) (>=  (M_integer (leftoperand exp)) (M_integer (rightoperand exp)))]
       [(eq? (operator exp) '&&) (eq? (M_boolean (leftoperand exp)) (M_boolean (rightoperand exp)))]
       [(eq? (operator exp) '||) (or  (M_boolean (leftoperand exp)) (M_boolean (rightoperand exp)))]
-      [(eq? (operator exp) '!)  (not (M_boolean (leftoperand exp)))])))
+      [(eq? (operator exp) '!)  (not (M_boolean (leftoperand exp)))]
+      ; add lookup of variables
+      )))
 
 (define M_integer
   (lambda (exp)
@@ -61,6 +63,30 @@
     (let ([n (index-of (car state) var)])
       (cons (car state) (cons (update-n (cadr state) n value) '())))))
 
+(define M_statement
+  (lambda (statement state)
+    [cond
+      [(equal? (car statement) 'var)    'TODO] ;TODO variable declaration
+      [(equal? (car statement) '=)      'TODO] ;TODO variable assignment
+      [(equal? (car statement) 'return) 'TODO] ;TODO return statement
+      [(equal? (car statement) 'if)     (M_if statement state]
+      [(equal? (car statement) 'while)  (M_while statement state)]]))
+
+(define M_while
+  (lambda (statement state)
+    (let [(condition (cadr statement))
+          (body-stmt (caddr statement))]
+      (if (M_boolean condition state)
+          (M_while statement (M_statement body-stmt state))
+          state))))
+
+(define M_if
+  (lambda (statement state)
+    (let ((condition (cadr statement))
+          (body-stmt (caddr statement)))
+      (if (M_boolean condition state)
+          (M_while statement (M_statement body-stmt state))
+          state))))
 
 ; --------------------- HELPER FUNCTIONS ---------------------
 
