@@ -22,6 +22,21 @@
       [(eq? (operator exp) '/) (quotient (M_integer (leftoperand exp)) (M_integer (rightoperand exp)))]
       [(eq? (operator exp) '%) (remainder (M_integer (leftoperand exp)) (M_integer (rightoperand exp)))])))
 
-(define operator (lambda (exp) (car exp)))
+(define operator car)
 (define leftoperand cadr)
 (define rightoperand caddr)
+
+
+(define addBinding
+  (lambda (state var value)
+    (cons (addBinding-rec (car state) var) (cons (addBinding-rec (car (cdr state)) value) '()))))
+
+(define addBinding-rec
+  (lambda (ls value)
+    (if (null? ls)
+        (cons value '())
+        (cons (car ls) (addBinding-rec (cdr ls) value)))))
+      
+    
+
+
