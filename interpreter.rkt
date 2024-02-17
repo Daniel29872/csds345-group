@@ -4,13 +4,8 @@
 
 (define interpret
   (lambda (filename)
-    (interpret-rec (parser filename))))
-
-(define interpret-rec
-  (lambda (syntax-tree)
-    (cond
-      [(null? syntax-tree) '()]
-      [else '()])))
+    (let ((syntax-tree (parser filename)))
+      syntax-tree)))
 
 (define M_integer
   (lambda (exp)
