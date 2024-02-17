@@ -17,24 +17,30 @@
     (cond
       [(eq? exp 'true) #t]
       ((eq? exp 'false) #f)
+      ((not (list? exp))
+       (let ((value (getBinding state exp)))
+              (if (or (eq? value #t) (eq? value #f))
+                  value
+                  (error "type error"))))
       ((eq? (operator exp) '==) (eq? (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state)))
-      [(eq? (operator exp) '!=) (not (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
+      [(eq? (operator exp) '!=) (not (eq? (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state)))]
       [(eq? (operator exp) '<)  (<   (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
       [(eq? (operator exp) '>)  (>   (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
       [(eq? (operator exp) '<=) (<=  (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
       [(eq? (operator exp) '>=) (>=  (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
       [(eq? (operator exp) '&&) (eq? (M_boolean (leftoperand exp) state) (M_boolean (rightoperand exp) state))]
       [(eq? (operator exp) '||) (or  (M_boolean (leftoperand exp) state) (M_boolean (rightoperand exp) state))]
-      [(eq? (operator exp) '!)  (not (M_boolean (leftoperand exp) state))]
-      [else (let ((value (getBinding state exp)))
-              (if (or (eq? value #t) (eq? value #f))
-                  value
-                  (error "incorrect type")))])))
+      [(eq? (operator exp) '!)  (not (M_boolean (leftoperand exp) state))])))
 
 (define M_integer
   (lambda (exp state)
     (cond
       [(number? exp) exp]
+      [(not (list? exp))
+       (let ((value (getBinding state exp)))
+              (if (number? value)
+                  value
+                  (error "type error")))]
       [(eq? (operator exp) '+) (+ (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
       [(eq? (operator exp) '-) (- (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
       [(eq? (operator exp) '*) (* (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
@@ -140,14 +146,21 @@
   (lambda (statement state)
     [cond
       [(equal? (car statement) 'var)    (M_declare statement state)]
-      [(equal? (car statement) '=)      'TODO] ;(M_assign statement state)]
-      [(equal? (car statement) 'return) (M_return statement state)]
+      [(equal? (car statement) '=)      (M_assignment statement state)] ;(M_assign statement state)]
+      [(equal? (car statement) 'return) (M_return statement state)] ;TODO return statement
       [(equal? (car statement) 'if)     (M_if statement state)]
       [(equal? (car statement) 'while)  (M_while statement state)]]))
 
 (define M_return
   (lambda (statement state)
     (updateBinding (M_declare '(var return) state) 'return (M_integer (cadr statement) state))))
+
+(define M_assignment
+  (lambda (statement state)
+    (let ((var (cadr statement))
+          (value (M_integer (caddr statement) state))) ; the value from evaluating the expression
+                                                       ; TODO: only evalues exp returning an int
+      (updateBinding state var value))))
 
 (define M_while
   (lambda (statement state)
@@ -164,12 +177,6 @@
       (if (M_boolean condition state)
           (M_while statement (M_statement body-stmt state))
           state))))
-
-;(define M_assign
-;  (lambda (statement state)
-;    (let ((var (cadr statement))
-;          (value (caddr statement)))
-;      (if (
 
 (define M_declare
   (lambda (statement state)
