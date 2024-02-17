@@ -118,6 +118,7 @@
         (cdr ls)
         (cons (car ls) (remove-n (cdr ls) (- n 1))))))
 
+; Update the nth element of the list and return the updated list
 (define update-n
   (lambda (ls n value)
     (if (zero? n)
@@ -131,13 +132,6 @@
       [(and (number? a) (number? b)) #t]
       [(and (boolean? a) (boolean? b)) #t]
       [else #f])))
-
-; Update the nth element of the list and return the updated list
-(define update-n
-  (lambda (ls n value)
-    (if (zero? n)
-        (cons value (cdr ls))
-        (cons (car ls) (update-n (cdr ls) (- n 1) value)))))
 
 
 ; --------------------- STATE FUNCTIONS ---------------------
