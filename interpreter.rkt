@@ -156,8 +156,10 @@
     (updateBinding (M_declare '(var return) state) 'return (M_integer (cadr statement) state))))
 
 (define M_assignment
-  (lambda (statement state)
-    (updateBinding state (leftoperand statement) (rightoperand statement))))
+   (lambda (statement state)
+     (let ((var (cadr statement))
+           (value (M_integer (caddr statement) state)))
+       (updateBinding state var value))))
 
 (define M_while
   (lambda (statement state)
@@ -172,7 +174,7 @@
     (let ((condition (cadr statement))
           (body-stmt (caddr statement)))
       (if (M_boolean condition state)
-          (M_while statement (M_statement body-stmt state))
+          (M_statement body-stmt state)
           state))))
 
 (define M_declare
@@ -180,11 +182,12 @@
     (let ((name (cadr statement)))
       (if (null? (cddr statement))
           (addBinding state name 'error)
-          (addBinding state name (M_value statement state))))))
+          (addBinding state name (M_value (caddr statement) state))))))
 
 (define M_value
   (lambda (statement state)
     (cond
+      [(number? statement) statement]
       [(eq? (operator statement) '+) (M_integer statement state)]
       [(eq? (operator statement) '-) (M_integer statement state)]
       [(eq? (operator statement) '*) (M_integer statement state)]
@@ -200,8 +203,6 @@
       [(eq? (operator statement) '||) (M_boolean statement state)]
       [(eq? (operator statement) '!) (M_boolean statement state)]
       [else (error "invalid operator")])))
-
-
 
         
   
