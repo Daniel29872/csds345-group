@@ -1,4 +1,4 @@
 #lang racket
 
-require "simpleParser.rkt"
+(require "simpleParser.rkt")
 
