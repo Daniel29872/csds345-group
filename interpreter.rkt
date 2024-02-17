@@ -4,8 +4,13 @@
 
 (define interpret
   (lambda (filename)
-    (let ((syntax-tree (parser filename)))
-          syntax-tree)))
+    (interpret-acc (parser filename) '(() ()))))
+
+(define interpret-acc
+  (lambda (syntax-tree state)
+    (if (null? syntax-tree)
+        (getBinding state 'return)
+        (interpret-acc (cdr syntax-tree) (M_statement (car syntax-tree) state)))))
 
 (define M_boolean
   (lambda (exp state)
@@ -113,7 +118,6 @@
         (cdr ls)
         (cons (car ls) (remove-n (cdr ls) (- n 1))))))
 
-; Update the nth element of the list and return the updated list
 (define update-n
   (lambda (ls n value)
     (if (zero? n)
@@ -128,6 +132,13 @@
       [(and (boolean? a) (boolean? b)) #t]
       [else #f])))
 
+; Update the nth element of the list and return the updated list
+(define update-n
+  (lambda (ls n value)
+    (if (zero? n)
+        (cons value (cdr ls))
+        (cons (car ls) (update-n (cdr ls) (- n 1) value)))))
+
 
 ; --------------------- STATE FUNCTIONS ---------------------
 
@@ -136,9 +147,13 @@
     [cond
       [(equal? (car statement) 'var)    (M_declare statement state)]
       [(equal? (car statement) '=)      'TODO] ;(M_assign statement state)]
-      [(equal? (car statement) 'return) 'TODO] ;TODO return statement
+      [(equal? (car statement) 'return) (M_return statement state)] ;TODO return statement
       [(equal? (car statement) 'if)     (M_if statement state)]
       [(equal? (car statement) 'while)  (M_while statement state)]]))
+
+(define M_return
+  (lambda (statement state)
+    (updateBinding (M_declare '(var return) state) 'return (cadr statement))))
 
 (define M_while
   (lambda (statement state)
