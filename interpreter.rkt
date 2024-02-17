@@ -38,8 +38,8 @@
       [(eq? (operator exp) '+) (+ (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
       [(eq? (operator exp) '-) (- (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
       [(eq? (operator exp) '*) (* (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
-      [(eq? (operator exp) '/) (quotient (M_integer (leftoperand exp) state) (M_integer (rightoperand exp)) state)]
-      [(eq? (operator exp) '%) (remainder (M_integer (leftoperand exp) state) (M_integer (rightoperand exp)) state)]
+      [(eq? (operator exp) '/) (quotient (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
+      [(eq? (operator exp) '%) (remainder (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
       [else (let ((value (getBinding state exp)))
               (if (number? value)
                   value
@@ -141,13 +141,13 @@
     [cond
       [(equal? (car statement) 'var)    (M_declare statement state)]
       [(equal? (car statement) '=)      'TODO] ;(M_assign statement state)]
-      [(equal? (car statement) 'return) (M_return statement state)] ;TODO return statement
+      [(equal? (car statement) 'return) (M_return statement state)]
       [(equal? (car statement) 'if)     (M_if statement state)]
       [(equal? (car statement) 'while)  (M_while statement state)]]))
 
 (define M_return
   (lambda (statement state)
-    (updateBinding (M_declare '(var return) state) 'return (cadr statement))))
+    (updateBinding (M_declare '(var return) state) 'return (M_integer (cadr statement) state))))
 
 (define M_while
   (lambda (statement state)
