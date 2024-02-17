@@ -4,13 +4,8 @@
 
 (define interpret
   (lambda (filename)
-    (interpret-rec (parser filename))))
-
-(define interpret-rec
-  (lambda (syntax-tree)
-    (cond
-      [(null? syntax-tree) '()]
-      [else '()])))
+    (let ((syntax-tree (parser filename)))
+      syntax-tree)))
 
 (define M_integer
   (lambda (exp)
@@ -22,6 +17,6 @@
       [(eq? (operator exp) '/) (quotient (M_integer (leftoperand exp)) (M_integer (rightoperand exp)))]
       [(eq? (operator exp) '%) (remainder (M_integer (leftoperand exp)) (M_integer (rightoperand exp)))])))
 
-(define operator (lambda (exp) (car exp)))
+(define operator car)
 (define leftoperand cadr)
 (define rightoperand caddr)
