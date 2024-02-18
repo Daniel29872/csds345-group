@@ -114,7 +114,7 @@
 (define get-n
   (lambda (ls n)
     (cond
-      [(null? ls) (error "list index out of range")]
+      [(null? ls) -1]
       [(zero? n) (car ls)]
       [else (get-n (cdr ls) (- n 1))])))
 
