@@ -169,11 +169,11 @@
 (define M_statement
   (lambda (statement state)
     [cond
-      [(equal? (car statement) 'var)    (M_declare statement state)]
-      [(equal? (car statement) '=)      (M_assignment statement state)]
-      [(equal? (car statement) 'return) (M_return statement state)]
-      [(equal? (car statement) 'if)     (M_if statement state)]
-      [(equal? (car statement) 'while)  (M_while statement state)]]))
+      [(equal? (operator statement) 'var)    (M_declare statement state)]
+      [(equal? (operator statement) '=)      (M_assignment statement state)]
+      [(equal? (operator statement) 'return) (M_return statement state)]
+      [(equal? (operator statement) 'if)     (M_if statement state)]
+      [(equal? (operator statement) 'while)  (M_while statement state)]]))
 
 (define M_return
   (lambda (statement state)
@@ -185,14 +185,14 @@
 
 (define M_assignment
    (lambda (statement state)
-     (let ((var (cadr statement))
-           (value (M_value (caddr statement) state)))
+     (let ((var (leftoperand statement))
+           (value (M_value (rightoperand statement) state)))
        (updateBinding state var value))))
 
 (define M_while
   (lambda (statement state)
-    (let [(condition (cadr statement))
-          (body-stmt (caddr statement))]
+    (let [(condition (leftoperand statement))
+          (body-stmt (rightoperand statement))]
       (if (M_boolean condition state)
           (M_while statement (M_statement body-stmt state))
           state))))
@@ -210,8 +210,8 @@
 
 (define M_declare
   (lambda (statement state)
-    (let ((name (cadr statement)))
-      (if (null? (cddr statement))
+    (let ((name (leftoperand statement)))
+      (if (null? (rightoperand statement))
           (addBinding state name 'error)
           (addBinding state name (M_value (caddr statement) state))))))
 
