@@ -9,7 +9,7 @@
 (define interpret-acc
   (lambda (syntax-tree state)
     (if (null? syntax-tree)
-        (getBinding state 'return)
+        (M_value 'return state)
         (interpret-acc (cdr syntax-tree) (M_statement (car syntax-tree) state)))))
 
 (define M_boolean
@@ -41,6 +41,7 @@
               (if (number? value)
                   value
                   (error "type error")))]
+      [(and (eq? (operator exp) '-) (null? (cddr exp))) (- 0 (M_integer (leftoperand exp) state))] ; unary -
       [(eq? (operator exp) '+) (+ (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
       [(eq? (operator exp) '-) (- (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
       [(eq? (operator exp) '*) (* (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
@@ -153,7 +154,7 @@
 
 (define M_return
   (lambda (statement state)
-    (updateBinding (M_declare '(var return) state) 'return (M_integer (cadr statement) state))))
+    (updateBinding (M_declare '(var return) state) 'return (M_value (cadr statement) state))))
 
 (define M_assignment
    (lambda (statement state)
@@ -171,11 +172,14 @@
 
 (define M_if
   (lambda (statement state)
-    (let ((condition (cadr statement))
-          (body-stmt (caddr statement)))
-      (if (M_boolean condition state)
-          (M_statement body-stmt state)
-          state))))
+    (let ((condition  (cadr statement))
+          (body-stmt  (caddr statement))
+          (else-stmts (cdddr statement)))
+      (cond
+        [(M_boolean condition state) (M_statement body-stmt state)]
+        [(null? (cdddr statement)) state]
+        [(eq? (car else-stmts) 'if) (M_if else-stmts state)]
+        [else (M_statement (car else-stmts) state)]))))
 
 (define M_declare
   (lambda (statement state)
@@ -188,6 +192,12 @@
   (lambda (statement state)
     (cond
       [(number? statement) statement]
+      [(not (list? statement))
+       (let ((value (getBinding state statement)))
+              (cond
+                [(eq? value #t) 'true]
+                [(eq? value #f) 'false]
+                [else value]))]
       [(eq? (operator statement) '+) (M_integer statement state)]
       [(eq? (operator statement) '-) (M_integer statement state)]
       [(eq? (operator statement) '*) (M_integer statement state)]
@@ -203,6 +213,3 @@
       [(eq? (operator statement) '||) (M_boolean statement state)]
       [(eq? (operator statement) '!) (M_boolean statement state)]
       [else (error "invalid operator")])))
-
-        
-  
