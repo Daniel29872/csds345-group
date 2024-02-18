@@ -154,7 +154,10 @@
 
 (define M_return
   (lambda (statement state)
-    (updateBinding (M_declare '(var return) state) 'return (M_value (cadr statement) state))))
+    (let ((value (M_value (cadr statement) state)))
+      (if (eq? value #t)
+          [updateBinding (M_declare '(var return) state) 'return 'true]
+          [updateBinding (M_declare '(var return) state) 'return 'false]))))
 
 (define M_assignment
    (lambda (statement state)
@@ -192,12 +195,13 @@
   (lambda (statement state)
     (cond
       [(number? statement) statement]
-      [(not (list? statement))
-       (let ((value (getBinding state statement)))
-              (cond
-                [(eq? value #t) 'true]
-                [(eq? value #f) 'false]
-                [else value]))]
+      [(not (list? statement)) (getBinding state statement)]
+      ;[(not (list? statement))
+      ; (let ((value (getBinding state statement)))
+      ;        (cond
+      ;          [(eq? value #t) 'true]
+      ;          [(eq? value #f) 'false]
+      ;          [else value]))]
       [(eq? (operator statement) '+) (M_integer statement state)]
       [(eq? (operator statement) '-) (M_integer statement state)]
       [(eq? (operator statement) '*) (M_integer statement state)]
