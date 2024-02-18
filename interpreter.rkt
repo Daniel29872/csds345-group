@@ -159,7 +159,7 @@
 (define M_assignment
    (lambda (statement state)
      (let ((var (cadr statement))
-           (value (M_integer (caddr statement) state)))
+           (value (M_value (caddr statement) state)))
        (updateBinding state var value))))
 
 (define M_while
