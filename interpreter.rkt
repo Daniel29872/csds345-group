@@ -32,7 +32,8 @@
       [(eq? (operator exp) '>=) (>=  (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
       [(eq? (operator exp) '&&) (eq? (M_boolean (leftoperand exp) state) (M_boolean (rightoperand exp) state))]
       [(eq? (operator exp) '||) (or  (M_boolean (leftoperand exp) state) (M_boolean (rightoperand exp) state))]
-      [(eq? (operator exp) '!)  (not (M_boolean (leftoperand exp) state))])))
+      [(eq? (operator exp) '!)  (not (M_boolean (leftoperand exp) state))]
+      [else (error "Not a Boolean")])))
 
 (define M_integer
   (lambda (exp state)
@@ -49,10 +50,7 @@
       [(eq? (operator exp) '*) (* (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
       [(eq? (operator exp) '/) (quotient (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
       [(eq? (operator exp) '%) (remainder (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
-      [else (let ((value (getBinding state exp)))
-              (if (number? value)
-                  value
-                  (error "incorrect type")))])))
+      [else (error "Not an Integer")])))
 
 (define operator car)
 (define leftoperand cadr)
