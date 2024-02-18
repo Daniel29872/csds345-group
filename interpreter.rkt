@@ -155,9 +155,10 @@
 (define M_return
   (lambda (statement state)
     (let ((value (M_value (cadr statement) state)))
-      (if (eq? value #t)
-          [updateBinding (M_declare '(var return) state) 'return 'true]
-          [updateBinding (M_declare '(var return) state) 'return 'false]))))
+      (cond
+        [(eq? value #t) (updateBinding (M_declare '(var return) state) 'return 'true)]
+        [(eq? value #f) (updateBinding (M_declare '(var return) state) 'return 'false)]
+        [else (updateBinding (M_declare '(var return) state) 'return value)]))))
 
 (define M_assignment
    (lambda (statement state)
