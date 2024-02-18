@@ -56,6 +56,27 @@
 (define leftoperand cadr)
 (define rightoperand caddr)
 
+(define M_value
+  (lambda (statement state)
+    (cond
+      [(number? statement) statement]
+      [(not (list? statement)) (getBinding state statement)]
+      [(eq? (operator statement) '+) (M_integer statement state)]
+      [(eq? (operator statement) '-) (M_integer statement state)]
+      [(eq? (operator statement) '*) (M_integer statement state)]
+      [(eq? (operator statement) '/) (M_integer statement state)]
+      [(eq? (operator statement) '%) (M_integer statement state)]
+      [(eq? (operator statement) '==) (M_boolean statement state)]
+      [(eq? (operator statement) '!=) (M_boolean statement state)]
+      [(eq? (operator statement) '<) (M_boolean statement state)]
+      [(eq? (operator statement) '>) (M_boolean statement state)]
+      [(eq? (operator statement) '<=) (M_boolean statement state)]
+      [(eq? (operator statement) '>=) (M_boolean statement state)]
+      [(eq? (operator statement) '&&) (M_boolean statement state)]
+      [(eq? (operator statement) '||) (M_boolean statement state)]
+      [(eq? (operator statement) '!) (M_boolean statement state)]
+      [else (error "invalid operator")])))
+
 
 ; --------------------- BINDING FUNCTIONS ---------------------
 
@@ -192,29 +213,3 @@
           (addBinding state name 'error)
           (addBinding state name (M_value (caddr statement) state))))))
 
-(define M_value
-  (lambda (statement state)
-    (cond
-      [(number? statement) statement]
-      [(not (list? statement)) (getBinding state statement)]
-      ;[(not (list? statement))
-      ; (let ((value (getBinding state statement)))
-      ;        (cond
-      ;          [(eq? value #t) 'true]
-      ;          [(eq? value #f) 'false]
-      ;          [else value]))]
-      [(eq? (operator statement) '+) (M_integer statement state)]
-      [(eq? (operator statement) '-) (M_integer statement state)]
-      [(eq? (operator statement) '*) (M_integer statement state)]
-      [(eq? (operator statement) '/) (M_integer statement state)]
-      [(eq? (operator statement) '%) (M_integer statement state)]
-      [(eq? (operator statement) '==) (M_boolean statement state)]
-      [(eq? (operator statement) '!=) (M_boolean statement state)]
-      [(eq? (operator statement) '<) (M_boolean statement state)]
-      [(eq? (operator statement) '>) (M_boolean statement state)]
-      [(eq? (operator statement) '<=) (M_boolean statement state)]
-      [(eq? (operator statement) '>=) (M_boolean statement state)]
-      [(eq? (operator statement) '&&) (M_boolean statement state)]
-      [(eq? (operator statement) '||) (M_boolean statement state)]
-      [(eq? (operator statement) '!) (M_boolean statement state)]
-      [else (error "invalid operator")])))
