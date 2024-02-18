@@ -1,5 +1,7 @@
 #lang racket
 
+; Group Members: Ulises Soto, Daniel Arnholt, Jimmy Ngo
+
 (require "simpleParser.rkt")
 
 (define interpret
