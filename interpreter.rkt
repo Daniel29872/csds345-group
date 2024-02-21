@@ -39,23 +39,23 @@
 (define getBinding
   (lambda (state var)
     (cond
-      [(null? (vars-list state)) (error "using before declaring")]
+      [(null? (vars-list state))         (error "using before declaring")]
       [(not (eq? (first-var state) var)) (getBinding (cons (rest-of-vars state) (list (rest-of-vals state))) var)]
-      [(eq? (first-val state) 'error) (error "using before assigning")]
-      [else (first-val state)])))
+      [(eq? (first-val state) 'error)    (error "using before assigning")]
+      [else                              (first-val state)])))
 
 (define removeBinding ; currently not used, but might be useful later
   (lambda (state var)
     (if (eq? (index-of (vars-list state) -1))
-             (error "using before declaring")
-             (cons (remove-n (vars-list state) (index-of (vars-list state)) (list (remove-n (vals-list state) (index-of (vars-list state)))))))))
+        (error "using before declaring")
+        (cons (remove-n (vars-list state) (index-of (vars-list state)) (list (remove-n (vals-list state) (index-of (vars-list state)))))))))
 
 (define updateBinding
   (lambda (state var value)
       (cond
-        [(eq? (index-of (vars-list state) var) -1) (error "using before declaring")]
+        [(eq? (index-of (vars-list state) var) -1)                                          (error "using before declaring")]
         [(not (same-type (get-n (vals-list state) (index-of (vars-list state) var)) value)) (error "incorrect type assignment")]
-        [else (cons (vars-list state) (list (update-n (vals-list state) (index-of (vars-list state) var) value)))])))
+        [else                                                                               (cons (vars-list state) (list (update-n (vals-list state) (index-of (vars-list state) var) value)))])))
 
 
 ; --------------------- HELPER FUNCTIONS ---------------------
@@ -76,17 +76,17 @@
 (define index-of-acc
   (lambda (ls value acc)
     (cond
-      [(null? ls) -1]
+      [(null? ls)                     -1]
       [(eq? (first-element ls) value) acc]
-      [else (index-of-acc (rest-of-list ls) value (+ acc 1))])))
+      [else                           (index-of-acc (rest-of-list ls) value (+ acc 1))])))
 
 ; Get the nth element of the list and return its value
 (define get-n
   (lambda (ls n)
     (cond
       [(null? ls) -1]
-      [(zero? n) (first-element ls)]
-      [else (get-n (rest-of-list ls) (- n 1))])))
+      [(zero? n)  (first-element ls)]
+      [else       (get-n (rest-of-list ls) (- n 1))])))
 
 ; Remove the nth element of the list and return the updated list
 (define remove-n
@@ -107,9 +107,9 @@
   (lambda (a b)
     (cond
       [(or (eq? a 'error) (eq? b 'error)) #t]
-      [(and (number? a) (number? b)) #t]
-      [(and (boolean? a) (boolean? b)) #t]
-      [else #f])))
+      [(and (number? a) (number? b))      #t]
+      [(and (boolean? a) (boolean? b))    #t]
+      [else                               #f])))
 
 
 ; --------------------- EVALUATION STATE FUNCTIONS ---------------------
@@ -158,23 +158,23 @@
 (define M_value
   (lambda (statement state)
     (cond
-      [(number? statement) statement]
-      [(not (list? statement)) (getBinding state statement)]
-      [(eq? (operator statement) '+) (M_integer statement state)]
-      [(eq? (operator statement) '-) (M_integer statement state)]
-      [(eq? (operator statement) '*) (M_integer statement state)]
-      [(eq? (operator statement) '/) (M_integer statement state)]
-      [(eq? (operator statement) '%) (M_integer statement state)]
+      [(number? statement)            statement]
+      [(not (list? statement))        (getBinding state statement)]
+      [(eq? (operator statement) '+)  (M_integer statement state)]
+      [(eq? (operator statement) '-)  (M_integer statement state)]
+      [(eq? (operator statement) '*)  (M_integer statement state)]
+      [(eq? (operator statement) '/)  (M_integer statement state)]
+      [(eq? (operator statement) '%)  (M_integer statement state)]
       [(eq? (operator statement) '==) (M_boolean statement state)]
       [(eq? (operator statement) '!=) (M_boolean statement state)]
-      [(eq? (operator statement) '<) (M_boolean statement state)]
-      [(eq? (operator statement) '>) (M_boolean statement state)]
+      [(eq? (operator statement) '<)  (M_boolean statement state)]
+      [(eq? (operator statement) '>)  (M_boolean statement state)]
       [(eq? (operator statement) '<=) (M_boolean statement state)]
       [(eq? (operator statement) '>=) (M_boolean statement state)]
       [(eq? (operator statement) '&&) (M_boolean statement state)]
       [(eq? (operator statement) '||) (M_boolean statement state)]
-      [(eq? (operator statement) '!) (M_boolean statement state)]
-      [else (error "invalid operator")])))
+      [(eq? (operator statement) '!)  (M_boolean statement state)]
+      [else                           (error "invalid operator")])))
 
 (define M_statement
   (lambda (statement state)
@@ -203,9 +203,9 @@
   (lambda (statement state)
     (cond
       [(M_boolean (condition statement) state) (M_statement (body-stmt statement) state)]
-      [(null? (else-stmts statement)) state]
-      [(eq? (first-else-stmt statement) 'if) (M_if (else-stmts statement) state)]
-      [else (M_statement (first-else-stmt statement) state)])))
+      [(null? (else-stmts statement))          state]
+      [(eq? (first-else-stmt statement) 'if)   (M_if (else-stmts statement) state)]
+      [else                                    (M_statement (first-else-stmt statement) state)])))
 
 ; --------------------- VARIABLE / VALUE STATE FUNCTIONS ---------------------
 
@@ -218,7 +218,7 @@
     (cond
       [(eq? (M_value (var-name statement) state) #t) (updateBinding (M_declare '(var return) state) 'return 'true)]
       [(eq? (M_value (var-name statement) state) #f) (updateBinding (M_declare '(var return) state) 'return 'false)]
-      [else (updateBinding (M_declare '(var return) state) 'return (M_value (var-name statement) state))])))
+      [else                                          (updateBinding (M_declare '(var return) state) 'return (M_value (var-name statement) state))])))
 
 (define M_assignment
    (lambda (statement state)
