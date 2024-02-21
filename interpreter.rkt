@@ -190,25 +190,20 @@
 
 (define M_return
   (lambda (statement state)
-    (let ((value (M_value (cadr statement) state)))
-      (cond
-        [(eq? value #t) (updateBinding (M_declare '(var return) state) 'return 'true)]
-        [(eq? value #f) (updateBinding (M_declare '(var return) state) 'return 'false)]
-        [else (updateBinding (M_declare '(var return) state) 'return value)]))))
+    (cond
+      [(eq? (M_value (var-name statement) state) #t) (updateBinding (M_declare '(var return) state) 'return 'true)]
+      [(eq? (M_value (var-name statement) state) #f) (updateBinding (M_declare '(var return) state) 'return 'false)]
+      [else (updateBinding (M_declare '(var return) state) 'return (M_value (var-name statement) state))])))
 
 (define M_assignment
    (lambda (statement state)
-     (let ((var (leftoperand statement))
-           (value (M_value (rightoperand statement) state)))
-       (updateBinding state var value))))
+     (updateBinding state (var-name statement) (M_value (var-value statement) state))))
 
 (define M_while
   (lambda (statement state)
-    (let [(condition (leftoperand statement))
-          (body-stmt (rightoperand statement))]
-      (if (M_boolean condition state)
-          (M_while statement (M_statement body-stmt state))
-          state))))
+    (if (M_boolean (condition statement) state)
+        (M_while statement (M_statement (body-stmt statement) state))
+        state)))
 
 (define condition cadr)
 (define body-stmt caddr)
@@ -229,8 +224,6 @@
 
 (define M_declare
   (lambda (statement state)
-    (let ((name (var-name statement)))
-      (if (null? (var-value-list statement))
-          (addBinding state name 'error)
-          (addBinding state name (M_value (var-value statement) state))))))
-
+    (if (null? (var-value-list statement))
+        (addBinding state (var-name statement) 'error)
+        (addBinding state (var-name statement) (M_value (var-value statement) state)))))
