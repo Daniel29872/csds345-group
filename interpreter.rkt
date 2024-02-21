@@ -122,8 +122,8 @@
 (define M_boolean
   (lambda (exp state)
     (cond
-      [(eq? exp 'true) #t]
-      [(eq? exp 'false) #f]
+      [(eq? exp 'true)          #t]
+      [(eq? exp 'false)         #f]
       [(not (list? exp))
             (if (boolean? (getBinding state exp))
                 (getBinding state exp)
@@ -137,23 +137,23 @@
       [(eq? (operator exp) '&&) (eq? (M_boolean (leftoperand exp) state) (M_boolean (rightoperand exp) state))]
       [(eq? (operator exp) '||) (or  (M_boolean (leftoperand exp) state) (M_boolean (rightoperand exp) state))]
       [(eq? (operator exp) '!)  (not (M_boolean (leftoperand exp) state))]
-      [else     (error "Not a Boolean")])))
+      [else                     (error "Not a Boolean")])))
 
 (define M_integer
   (lambda (exp state)
     (cond
-      [(number? exp) exp]
+      [(number? exp)                                                  exp]
       [(not (list? exp))
             (if (number? (getBinding state exp))
                 (getBinding state exp)
                 (error "type error"))]
-      [(and (eq? (operator exp) '-) (null? (rightoperand-list exp))) (- 0 (M_integer (leftoperand exp) state))] ; unary -
-      [(eq? (operator exp) '+) (+ (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
-      [(eq? (operator exp) '-) (- (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
-      [(eq? (operator exp) '*) (* (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
-      [(eq? (operator exp) '/) (quotient (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
-      [(eq? (operator exp) '%) (remainder (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
-      [else     (error "Not an Integer")])))
+      [(and (eq? (operator exp) '-) (null? (rightoperand-list exp)))  (- 0 (M_integer (leftoperand exp) state))] ; unary -
+      [(eq? (operator exp) '+)                                        (+ (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
+      [(eq? (operator exp) '-)                                        (- (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
+      [(eq? (operator exp) '*)                                        (* (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
+      [(eq? (operator exp) '/)                                        (quotient (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
+      [(eq? (operator exp) '%)                                        (remainder (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
+      [else                                                           (error "Not an Integer")])))
 
 (define M_value
   (lambda (statement state)
