@@ -87,17 +87,18 @@
 (define vars-list car)
 (define vals-list cadr)
 
+(define first-var caar)
+(define first-val caadr)
+
+(define rest-of-vars cdar)
+(define rest-of-vals cdadr)
+
 (define addBinding
   (lambda (state var value)
     (let ([n (index-of (vars-list state) var)])
       (if (eq? n -1)
           (cons (add-last (vars-list state) var) (cons (add-last (vals-list state) value) '()))
           (error "already declared variable")))))
-
-(define first-var caar)
-(define first-val caadr)
-(define rest-of-vars cdar)
-(define rest-of-vals cdadr)
 
 (define getBinding
   (lambda (state var)
@@ -177,7 +178,12 @@
       [else #f])))
 
 
-; --------------------- STATE FUNCTIONS ---------------------
+; --------------------- STATEMENT STATE FUNCTIONS ---------------------
+
+(define condition cadr)
+(define body-stmt caddr)
+(define else-stmts cdddr)
+(define first-else-stmt cadddr)
 
 (define M_statement
   (lambda (statement state)
@@ -187,6 +193,26 @@
       [(equal? (operator statement) 'return) (M_return statement state)]
       [(equal? (operator statement) 'if)     (M_if statement state)]
       [(equal? (operator statement) 'while)  (M_while statement state)]]))
+
+(define M_while
+  (lambda (statement state)
+    (if (M_boolean (condition statement) state)
+        (M_while statement (M_statement (body-stmt statement) state))
+        state)))
+
+(define M_if
+  (lambda (statement state)
+    (cond
+      [(M_boolean (condition statement) state) (M_statement (body-stmt statement) state)]
+      [(null? (else-stmts statement)) state]
+      [(eq? (first-else-stmt statement) 'if) (M_if (else-stmts statement) state)]
+      [else (M_statement (first-else-stmt statement) state)])))
+
+; --------------------- VARIABLE / VALUE STATE FUNCTIONS ---------------------
+
+(define var-name cadr)
+(define var-value caddr)
+(define var-value-list cddr)
 
 (define M_return
   (lambda (statement state)
@@ -198,29 +224,6 @@
 (define M_assignment
    (lambda (statement state)
      (updateBinding state (var-name statement) (M_value (var-value statement) state))))
-
-(define M_while
-  (lambda (statement state)
-    (if (M_boolean (condition statement) state)
-        (M_while statement (M_statement (body-stmt statement) state))
-        state)))
-
-(define condition cadr)
-(define body-stmt caddr)
-(define else-stmts cdddr)
-(define first-else-stmt cadddr)
-
-(define M_if
-  (lambda (statement state)
-    (cond
-      [(M_boolean (condition statement) state) (M_statement (body-stmt statement) state)]
-      [(null? (else-stmts statement)) state]
-      [(eq? (first-else-stmt statement) 'if) (M_if (else-stmts statement) state)]
-      [else (M_statement (first-else-stmt statement) state)])))
-
-(define var-name cadr)
-(define var-value caddr)
-(define var-value-list cddr)
 
 (define M_declare
   (lambda (statement state)
