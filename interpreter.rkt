@@ -31,10 +31,9 @@
 
 (define addBinding
   (lambda (state var value)
-    (let ([n (index-of (vars-list state) var)])
-      (if (eq? n -1)
-          (cons (add-last (vars-list state) var) (cons (add-last (vals-list state) value) '()))
-          (error "already declared variable")))))
+    (if (eq? (index-of (vars-list state) var) -1)
+        (cons (add-last (vars-list state) var) (cons (add-last (vals-list state) value) '()))
+        (error "already declared variable"))))
 
 (define getBinding
   (lambda (state var)
@@ -44,21 +43,18 @@
       [(eq? (first-val state) 'error) (error "using before assigning")]
       [else (first-val state)])))
 
-(define removeBinding
+(define removeBinding ; currently not used, but might be useful later
   (lambda (state var)
-    (let ([n (index-of (vars-list state) var)])
-      (if (eq? n -1)
-          (error "using before declaring")
-          (cons (remove-n (vars-list state) n) (cons (remove-n (vals-list state) n) '()))))))
+    (if (eq? (index-of (vars-list state) -1))
+             (error "using before declaring")
+             (cons (remove-n (vars-list state) (index-of (vars-list state)) (cons (remove-n (vals-list state) (index-of (vars-list state)) '())))))))
 
 (define updateBinding
   (lambda (state var value)
-    (let* ([n (index-of (vars-list state) var)]
-          [prev (get-n (vals-list state) n)])
       (cond
-        [(eq? n -1) (error "using before declaring")]
-        [(or (eq? prev 'error) (same-type prev value)) (cons (vars-list state) (cons (update-n (vals-list state) n value) '()))]
-        [else (error (format "assigning incorrect type ~a ~a" prev value))]))))
+        [(eq? (index-of (vars-list state) var) -1) (error "using before declaring")]
+        [(not (same-type (get-n (vals-list state) (index-of (vars-list state) var)) value)) (error "incorrect type assignment")]
+        [else (cons (vars-list state) (cons (update-n (vals-list state) (index-of (vars-list state) var) value) '()))])))
 
 
 ; --------------------- HELPER FUNCTIONS ---------------------
@@ -109,6 +105,7 @@
 (define same-type
   (lambda (a b)
     (cond
+      [(or (eq? a 'error) (eq? b 'error)) #t]
       [(and (number? a) (number? b)) #t]
       [(and (boolean? a) (boolean? b)) #t]
       [else #f])))
