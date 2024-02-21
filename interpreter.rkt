@@ -9,7 +9,7 @@
 
 (define interpret
   (lambda (filename)
-    (interpret-acc (parser filename) '(() ()))))
+    (interpret-acc (parser filename) new-state)))
 
 (define interpret-acc
   (lambda (syntax-tree state)
@@ -58,6 +58,8 @@
 
 
 ; --------------------- HELPER FUNCTIONS ---------------------
+
+(define new-state '(() ()))
 
 (define first-element car)
 (define rest-of-list cdr)
