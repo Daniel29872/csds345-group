@@ -213,12 +213,14 @@
 (define var-value caddr)
 (define var-value-list cddr)
 
+(define return-declaration '(var return))
+
 (define M_return
   (lambda (statement state)
     (cond
-      [(eq? (M_value (var-name statement) state) #t) (updateBinding (M_declare '(var return) state) 'return 'true)]
-      [(eq? (M_value (var-name statement) state) #f) (updateBinding (M_declare '(var return) state) 'return 'false)]
-      [else                                          (updateBinding (M_declare '(var return) state) 'return (M_value (var-name statement) state))])))
+      [(eq? (M_value (var-name statement) state) #t) (updateBinding (M_declare return-declaration state) 'return 'true)]
+      [(eq? (M_value (var-name statement) state) #f) (updateBinding (M_declare return-declaration state) 'return 'false)]
+      [else                                          (updateBinding (M_declare return-declaration state) 'return (M_value (var-name statement) state))])))
 
 (define M_assignment
    (lambda (statement state)
