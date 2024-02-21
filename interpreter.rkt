@@ -210,21 +210,27 @@
           (M_while statement (M_statement body-stmt state))
           state))))
 
+(define condition cadr)
+(define body-stmt caddr)
+(define else-stmts cdddr)
+(define first-else-stmt cadddr)
+
 (define M_if
   (lambda (statement state)
-    (let ((condition  (cadr statement))
-          (body-stmt  (caddr statement))
-          (else-stmts (cdddr statement)))
-      (cond
-        [(M_boolean condition state) (M_statement body-stmt state)]
-        [(null? (cdddr statement)) state]
-        [(eq? (car else-stmts) 'if) (M_if else-stmts state)]
-        [else (M_statement (car else-stmts) state)]))))
+    (cond
+      [(M_boolean (condition statement) state) (M_statement (body-stmt statement) state)]
+      [(null? (else-stmts statement)) state]
+      [(eq? (first-else-stmt statement) 'if) (M_if (else-stmts statement) state)]
+      [else (M_statement (first-else-stmt statement) state)])))
+
+(define var-name cadr)
+(define var-value caddr)
+(define var-value-list cddr)
 
 (define M_declare
   (lambda (statement state)
-    (let ((name (leftoperand statement)))
-      (if (null? (cddr statement))
+    (let ((name (var-name statement)))
+      (if (null? (var-value-list statement))
           (addBinding state name 'error)
-          (addBinding state name (M_value (caddr statement) state))))))
+          (addBinding state name (M_value (var-value statement) state))))))
 
