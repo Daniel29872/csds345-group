@@ -4,6 +4,9 @@
 
 (require "simpleParser.rkt")
 
+(define rest-of-tree cdr)
+(define curr-statement car)
+
 (define interpret
   (lambda (filename)
     (interpret-acc (parser filename) '(() ()))))
@@ -13,73 +16,6 @@
     (if (null? syntax-tree)
         (M_value 'return state)
         (interpret-acc (rest-of-tree syntax-tree) (M_statement (curr-statement syntax-tree) state)))))
-
-(define rest-of-tree cdr)
-(define curr-statement car)
-
-(define M_boolean
-  (lambda (exp state)
-    (cond
-      [(eq? exp 'true) #t]
-      ((eq? exp 'false) #f)
-      ((not (list? exp))
-       (let ((value (getBinding state exp)))
-              (if (or (eq? value #t) (eq? value #f))
-                  value
-                  (error "type error"))))
-      ((eq? (operator exp) '==) (eq? (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state)))
-      [(eq? (operator exp) '!=) (not (eq? (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state)))]
-      [(eq? (operator exp) '<)  (<   (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
-      [(eq? (operator exp) '>)  (>   (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
-      [(eq? (operator exp) '<=) (<=  (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
-      [(eq? (operator exp) '>=) (>=  (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
-      [(eq? (operator exp) '&&) (eq? (M_boolean (leftoperand exp) state) (M_boolean (rightoperand exp) state))]
-      [(eq? (operator exp) '||) (or  (M_boolean (leftoperand exp) state) (M_boolean (rightoperand exp) state))]
-      [(eq? (operator exp) '!)  (not (M_boolean (leftoperand exp) state))]
-      [else (error "Not a Boolean")])))
-
-(define M_integer
-  (lambda (exp state)
-    (cond
-      [(number? exp) exp]
-      [(not (list? exp))
-       (let ((value (getBinding state exp)))
-              (if (number? value)
-                  value
-                  (error "type error")))]
-      [(and (eq? (operator exp) '-) (null? (rightoperand-list exp))) (- 0 (M_integer (leftoperand exp) state))] ; unary -
-      [(eq? (operator exp) '+) (+ (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
-      [(eq? (operator exp) '-) (- (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
-      [(eq? (operator exp) '*) (* (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
-      [(eq? (operator exp) '/) (quotient (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
-      [(eq? (operator exp) '%) (remainder (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
-      [else (error "Not an Integer")])))
-
-(define operator car)
-(define leftoperand cadr)
-(define rightoperand caddr)
-(define rightoperand-list cddr)
-
-(define M_value
-  (lambda (statement state)
-    (cond
-      [(number? statement) statement]
-      [(not (list? statement)) (getBinding state statement)]
-      [(eq? (operator statement) '+) (M_integer statement state)]
-      [(eq? (operator statement) '-) (M_integer statement state)]
-      [(eq? (operator statement) '*) (M_integer statement state)]
-      [(eq? (operator statement) '/) (M_integer statement state)]
-      [(eq? (operator statement) '%) (M_integer statement state)]
-      [(eq? (operator statement) '==) (M_boolean statement state)]
-      [(eq? (operator statement) '!=) (M_boolean statement state)]
-      [(eq? (operator statement) '<) (M_boolean statement state)]
-      [(eq? (operator statement) '>) (M_boolean statement state)]
-      [(eq? (operator statement) '<=) (M_boolean statement state)]
-      [(eq? (operator statement) '>=) (M_boolean statement state)]
-      [(eq? (operator statement) '&&) (M_boolean statement state)]
-      [(eq? (operator statement) '||) (M_boolean statement state)]
-      [(eq? (operator statement) '!) (M_boolean statement state)]
-      [else (error "invalid operator")])))
 
 
 ; --------------------- BINDING FUNCTIONS ---------------------
@@ -178,12 +114,71 @@
       [else #f])))
 
 
-; --------------------- STATEMENT STATE FUNCTIONS ---------------------
+; --------------------- EVALUATION STATE FUNCTIONS ---------------------
 
-(define condition cadr)
-(define body-stmt caddr)
-(define else-stmts cdddr)
-(define first-else-stmt cadddr)
+(define operator car)
+(define leftoperand cadr)
+(define rightoperand caddr)
+(define rightoperand-list cddr)
+
+(define M_boolean
+  (lambda (exp state)
+    (cond
+      [(eq? exp 'true) #t]
+      ((eq? exp 'false) #f)
+      ((not (list? exp))
+       (let ((value (getBinding state exp)))
+              (if (or (eq? value #t) (eq? value #f))
+                  value
+                  (error "type error"))))
+      ((eq? (operator exp) '==) (eq? (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state)))
+      [(eq? (operator exp) '!=) (not (eq? (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state)))]
+      [(eq? (operator exp) '<)  (<   (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
+      [(eq? (operator exp) '>)  (>   (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
+      [(eq? (operator exp) '<=) (<=  (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
+      [(eq? (operator exp) '>=) (>=  (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
+      [(eq? (operator exp) '&&) (eq? (M_boolean (leftoperand exp) state) (M_boolean (rightoperand exp) state))]
+      [(eq? (operator exp) '||) (or  (M_boolean (leftoperand exp) state) (M_boolean (rightoperand exp) state))]
+      [(eq? (operator exp) '!)  (not (M_boolean (leftoperand exp) state))]
+      [else (error "Not a Boolean")])))
+
+(define M_integer
+  (lambda (exp state)
+    (cond
+      [(number? exp) exp]
+      [(not (list? exp))
+       (let ((value (getBinding state exp)))
+              (if (number? value)
+                  value
+                  (error "type error")))]
+      [(and (eq? (operator exp) '-) (null? (rightoperand-list exp))) (- 0 (M_integer (leftoperand exp) state))] ; unary -
+      [(eq? (operator exp) '+) (+ (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
+      [(eq? (operator exp) '-) (- (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
+      [(eq? (operator exp) '*) (* (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
+      [(eq? (operator exp) '/) (quotient (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
+      [(eq? (operator exp) '%) (remainder (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
+      [else (error "Not an Integer")])))
+
+(define M_value
+  (lambda (statement state)
+    (cond
+      [(number? statement) statement]
+      [(not (list? statement)) (getBinding state statement)]
+      [(eq? (operator statement) '+) (M_integer statement state)]
+      [(eq? (operator statement) '-) (M_integer statement state)]
+      [(eq? (operator statement) '*) (M_integer statement state)]
+      [(eq? (operator statement) '/) (M_integer statement state)]
+      [(eq? (operator statement) '%) (M_integer statement state)]
+      [(eq? (operator statement) '==) (M_boolean statement state)]
+      [(eq? (operator statement) '!=) (M_boolean statement state)]
+      [(eq? (operator statement) '<) (M_boolean statement state)]
+      [(eq? (operator statement) '>) (M_boolean statement state)]
+      [(eq? (operator statement) '<=) (M_boolean statement state)]
+      [(eq? (operator statement) '>=) (M_boolean statement state)]
+      [(eq? (operator statement) '&&) (M_boolean statement state)]
+      [(eq? (operator statement) '||) (M_boolean statement state)]
+      [(eq? (operator statement) '!) (M_boolean statement state)]
+      [else (error "invalid operator")])))
 
 (define M_statement
   (lambda (statement state)
@@ -193,6 +188,14 @@
       [(equal? (operator statement) 'return) (M_return statement state)]
       [(equal? (operator statement) 'if)     (M_if statement state)]
       [(equal? (operator statement) 'while)  (M_while statement state)]]))
+
+
+; --------------------- STATEMENT STATE FUNCTIONS ---------------------
+
+(define condition cadr)
+(define body-stmt caddr)
+(define else-stmts cdddr)
+(define first-else-stmt cadddr)
 
 (define M_while
   (lambda (statement state)
