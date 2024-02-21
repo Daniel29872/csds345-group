@@ -126,12 +126,15 @@
 
 ; --------------------- HELPER FUNCTIONS ---------------------
 
+(define first-element car)
+(define rest-of-list cdr)
+
 ; Add the value to the end of the list and return the updated list
 (define add-last
   (lambda (ls value)
     (if (null? ls)
         (cons value '())
-        (cons (car ls) (add-last (cdr ls) value)))))
+        (cons (first-element ls) (add-last (rest-of-list ls) value)))))
 
 ; Return the first index n where list[n] = value
 (define index-of (lambda (ls value) (index-of-acc ls value 0)))
@@ -140,30 +143,30 @@
   (lambda (ls value acc)
     (cond
       [(null? ls) -1]
-      [(eq? (car ls) value) acc]
-      [else (index-of-acc (cdr ls) value (+ acc 1))])))
+      [(eq? (first-element ls) value) acc]
+      [else (index-of-acc (rest-of-list ls) value (+ acc 1))])))
 
 ; Get the nth element of the list and return its value
 (define get-n
   (lambda (ls n)
     (cond
       [(null? ls) -1]
-      [(zero? n) (car ls)]
-      [else (get-n (cdr ls) (- n 1))])))
+      [(zero? n) (first-element ls)]
+      [else (get-n (rest-of-list ls) (- n 1))])))
 
 ; Remove the nth element of the list and return the updated list
 (define remove-n
   (lambda (ls n)
     (if (zero? n)
-        (cdr ls)
-        (cons (car ls) (remove-n (cdr ls) (- n 1))))))
+        (rest-of-list ls)
+        (cons (first-element ls) (remove-n (rest-of-list ls) (- n 1))))))
 
 ; Update the nth element of the list and return the updated list
 (define update-n
   (lambda (ls n value)
     (if (zero? n)
-        (cons value (cdr ls))
-        (cons (car ls) (update-n (cdr ls) (- n 1) value)))))
+        (cons value (rest-of-list ls))
+        (cons (first-element ls) (update-n (rest-of-list ls) (- n 1) value)))))
 
 ; Check if two values a and b are the same type
 (define same-type
