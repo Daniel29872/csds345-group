@@ -12,7 +12,10 @@
   (lambda (syntax-tree state)
     (if (null? syntax-tree)
         (M_value 'return state)
-        (interpret-acc (cdr syntax-tree) (M_statement (car syntax-tree) state)))))
+        (interpret-acc (rest-of-tree syntax-tree) (M_statement (curr-statement syntax-tree) state)))))
+
+(define rest-of-tree cdr)
+(define curr-statement car)
 
 (define M_boolean
   (lambda (exp state)
@@ -44,7 +47,7 @@
               (if (number? value)
                   value
                   (error "type error")))]
-      [(and (eq? (operator exp) '-) (null? (cddr exp))) (- 0 (M_integer (leftoperand exp) state))] ; unary -
+      [(and (eq? (operator exp) '-) (null? (rightoperand-list exp))) (- 0 (M_integer (leftoperand exp) state))] ; unary -
       [(eq? (operator exp) '+) (+ (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
       [(eq? (operator exp) '-) (- (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
       [(eq? (operator exp) '*) (* (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
@@ -55,6 +58,7 @@
 (define operator car)
 (define leftoperand cadr)
 (define rightoperand caddr)
+(define rightoperand-list cddr)
 
 (define M_value
   (lambda (statement state)
@@ -80,35 +84,43 @@
 
 ; --------------------- BINDING FUNCTIONS ---------------------
 
+(define vars-list car)
+(define vals-list cadr)
+
 (define addBinding
   (lambda (state var value)
-    (let ([n (index-of (car state) var)])
+    (let ([n (index-of (vars-list state) var)])
       (if (eq? n -1)
-          (cons (add-last (car state) var) (cons (add-last (cadr state) value) '()))
+          (cons (add-last (vars-list state) var) (cons (add-last (vals-list state) value) '()))
           (error "already declared variable")))))
+
+(define first-var caar)
+(define first-val caadr)
+(define rest-of-vars cdar)
+(define rest-of-vals cdadr)
 
 (define getBinding
   (lambda (state var)
     (cond
-      [(null? (car state)) (error "using before declaring")]
-      [(not (eq? (caar state) var)) (getBinding (cons (cdar state) (cons (cdadr state) '())) var)]
-      [(eq? (caadr state) 'error) (error "using before assigning")]
-      [else (caadr state)])))
+      [(null? (vars-list state)) (error "using before declaring")]
+      [(not (eq? (first-var state) var)) (getBinding (cons (rest-of-vars state) (cons (rest-of-vals state) '())) var)]
+      [(eq? (first-val state) 'error) (error "using before assigning")]
+      [else (first-val state)])))
 
 (define removeBinding
   (lambda (state var)
-    (let ([n (index-of (car state) var)])
+    (let ([n (index-of (vars-list state) var)])
       (if (eq? n -1)
           (error "using before declaring")
-          (cons (remove-n (car state) n) (cons (remove-n (cadr state) n) '()))))))
+          (cons (remove-n (vars-list state) n) (cons (remove-n (vals-list state) n) '()))))))
 
 (define updateBinding
   (lambda (state var value)
-    (let* ([n (index-of (car state) var)]
-          [prev (get-n (cadr state) n)])
+    (let* ([n (index-of (vars-list state) var)]
+          [prev (get-n (vals-list state) n)])
       (cond
         [(eq? n -1) (error "using before declaring")]
-        [(or (eq? prev 'error) (same-type prev value)) (cons (car state) (cons (update-n (cadr state) n value) '()))]
+        [(or (eq? prev 'error) (same-type prev value)) (cons (vars-list state) (cons (update-n (vals-list state) n value) '()))]
         [else (error (format "assigning incorrect type ~a ~a" prev value))]))))
 
 
@@ -209,7 +221,7 @@
 (define M_declare
   (lambda (statement state)
     (let ((name (leftoperand statement)))
-      (if (null? (rightoperand statement))
+      (if (null? (cddr statement))
           (addBinding state name 'error)
           (addBinding state name (M_value (caddr statement) state))))))
 
