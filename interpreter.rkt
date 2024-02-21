@@ -6,6 +6,7 @@
 
 (define rest-of-tree cdr)
 (define curr-statement car)
+(define new-state '(() ()))
 
 (define interpret
   (lambda (filename)
@@ -32,14 +33,14 @@
 (define addBinding
   (lambda (state var value)
     (if (eq? (index-of (vars-list state) var) -1)
-        (cons (add-last (vars-list state) var) (cons (add-last (vals-list state) value) '()))
+        (cons (add-last (vars-list state) var) (list (add-last (vals-list state) value)))
         (error "already declared variable"))))
 
 (define getBinding
   (lambda (state var)
     (cond
       [(null? (vars-list state)) (error "using before declaring")]
-      [(not (eq? (first-var state) var)) (getBinding (cons (rest-of-vars state) (cons (rest-of-vals state) '())) var)]
+      [(not (eq? (first-var state) var)) (getBinding (cons (rest-of-vars state) (list (rest-of-vals state))) var)]
       [(eq? (first-val state) 'error) (error "using before assigning")]
       [else (first-val state)])))
 
@@ -47,19 +48,17 @@
   (lambda (state var)
     (if (eq? (index-of (vars-list state) -1))
              (error "using before declaring")
-             (cons (remove-n (vars-list state) (index-of (vars-list state)) (cons (remove-n (vals-list state) (index-of (vars-list state)) '())))))))
+             (cons (remove-n (vars-list state) (index-of (vars-list state)) (list (remove-n (vals-list state) (index-of (vars-list state)))))))))
 
 (define updateBinding
   (lambda (state var value)
       (cond
         [(eq? (index-of (vars-list state) var) -1) (error "using before declaring")]
         [(not (same-type (get-n (vals-list state) (index-of (vars-list state) var)) value)) (error "incorrect type assignment")]
-        [else (cons (vars-list state) (cons (update-n (vals-list state) (index-of (vars-list state) var) value) '()))])))
+        [else (cons (vars-list state) (list (update-n (vals-list state) (index-of (vars-list state) var) value)))])))
 
 
 ; --------------------- HELPER FUNCTIONS ---------------------
-
-(define new-state '(() ()))
 
 (define first-element car)
 (define rest-of-list cdr)
@@ -68,7 +67,7 @@
 (define add-last
   (lambda (ls value)
     (if (null? ls)
-        (cons value '())
+        (list value)
         (cons (first-element ls) (add-last (rest-of-list ls) value)))))
 
 ; Return the first index n where list[n] = value
