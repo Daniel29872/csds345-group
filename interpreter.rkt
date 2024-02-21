@@ -123,13 +123,12 @@
   (lambda (exp state)
     (cond
       [(eq? exp 'true) #t]
-      ((eq? exp 'false) #f)
-      ((not (list? exp))
-       (let ((value (getBinding state exp)))
-              (if (or (eq? value #t) (eq? value #f))
-                  value
-                  (error "type error"))))
-      ((eq? (operator exp) '==) (eq? (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state)))
+      [(eq? exp 'false) #f]
+      [(not (list? exp))
+            (if (boolean? (getBinding state exp))
+                (getBinding state exp)
+                (error "type error"))]
+      [(eq? (operator exp) '==) (eq? (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
       [(eq? (operator exp) '!=) (not (eq? (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state)))]
       [(eq? (operator exp) '<)  (<   (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
       [(eq? (operator exp) '>)  (>   (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
@@ -145,10 +144,9 @@
     (cond
       [(number? exp) exp]
       [(not (list? exp))
-       (let ((value (getBinding state exp)))
-              (if (number? value)
-                  value
-                  (error "type error")))]
+            (if (number? (getBinding state exp))
+                (getBinding state exp)
+                (error "type error"))]
       [(and (eq? (operator exp) '-) (null? (rightoperand-list exp))) (- 0 (M_integer (leftoperand exp) state))] ; unary -
       [(eq? (operator exp) '+) (+ (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
       [(eq? (operator exp) '-) (- (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
@@ -180,12 +178,12 @@
 
 (define M_statement
   (lambda (statement state)
-    [cond
+    (cond
       [(equal? (operator statement) 'var)    (M_declare statement state)]
       [(equal? (operator statement) '=)      (M_assignment statement state)]
       [(equal? (operator statement) 'return) (M_return statement state)]
       [(equal? (operator statement) 'if)     (M_if statement state)]
-      [(equal? (operator statement) 'while)  (M_while statement state)]]))
+      [(equal? (operator statement) 'while)  (M_while statement state)])))
 
 
 ; --------------------- STATEMENT STATE FUNCTIONS ---------------------
