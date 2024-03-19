@@ -305,20 +305,20 @@
         state)))
 
 (define M_if
-  (lambda (statement state return break continue)
+  (lambda (statement state return break continue throw)
     (cond
-      [(M_boolean (condition statement) state) (M_statement (body-stmt statement) state return break continue 'throw)]
+      [(M_boolean (condition statement) state) (M_statement (body-stmt statement) state return break continue throw)]
       [(null? (else-stmts statement))          state]
-      [(eq? (first-else-stmt statement) 'if)   (M_if (else-stmts statement) state return)]
-      [else                                    (M_statement (first-else-stmt statement) state return break continue 'throw)])))
+      [(eq? (first-else-stmt statement) 'if)   (M_if (else-stmts statement) state return break continue throw)]
+      [else                                    (M_statement (first-else-stmt statement) state return break continue throw)])))
 
 (define M_try_catch_finally
-  (lambda (statement state return break continue)
+  (lambda (statement state return break continue throw)
     (call/cc (throw) (M_try (try statement)
                                   state return
-                                  (lambda (s) (break (M_finally (finally statement) s return break continue)))
-                                  (lambda (s) (continue (M_finally (finally statement) s return break continue)))
-                                  (lambda (s) (throw (M_finally (finally statement) s return break continue)))))))
+                                  (lambda (s) (break (M_finally (finally statement) s return break continue throw)))
+                                  (lambda (s) (continue (M_finally (finally statement) s return break continue throw)))
+                                  (lambda (s) (throw (M_finally (finally statement) s return break continue throw)))))))
 
 (define M_try
   (lambda (try state return newBreak newContinue newThrow)
@@ -326,7 +326,16 @@
     'try))
 
 (define M_catch
-  (lambda (
+  (lambda (catch state return break continue throw)
+    (if (null? catch)
+        (state)
+        (M_block state reutrn break continue throw))))
+    
+(define M_finally
+  (lambda (finally state return break continue throw)
+    (if (null? finally)
+        (state)
+        (M_block state return break continue throw)))
 
 ; --------------------- VARIABLE / VALUE STATE FUNCTIONS ---------------------
 
