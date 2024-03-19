@@ -269,8 +269,10 @@
       [(eq? (operator statement) 'if)       (M_if statement state return break continue)]
       [(eq? (operator statement) 'while)    (M_while statement state return throw)]
       [(eq? (operator statement) 'begin)    (M_block statement state return break continue)]
+      [(eq? (operator statement) 'try)      (M_try_catch_finally state return break continue)]
       [(eq? (operator statement) 'continue) (continue state)]
-      [(eq? (operator statement) 'break)    (break state)])))
+      [(eq? (operator statement) 'break)    (break state)]
+      [(eq? (operator statement) 'throw)    (throw state)])))
 
 
 ; --------------------- STATEMENT STATE FUNCTIONS ---------------------
@@ -310,15 +312,21 @@
       [(eq? (first-else-stmt statement) 'if)   (M_if (else-stmts statement) state return)]
       [else                                    (M_statement (first-else-stmt statement) state return break continue 'throw)])))
 
-(define M_try
+(define M_try_catch_finally
   (lambda (statement state return break continue)
-    (call/cc (throw) (M_try_catch (try statement)
-                                  (catch statement)
-                                  (finally statement)
+    (call/cc (throw) (M_try (try statement)
                                   state return
-                                  (lambda (s) (break (M_finally (finally statement) state return break continue)))
-                                  (lambda (s) (continue (M_finally (finally statement) state return break continue)))
-                                  (lambda (s) (throw (M_finally (finally statement) state return break continue)))))))
+                                  (lambda (s) (break (M_finally (finally statement) s return break continue)))
+                                  (lambda (s) (continue (M_finally (finally statement) s return break continue)))
+                                  (lambda (s) (throw (M_finally (finally statement) s return break continue)))))))
+
+(define M_try
+  (lambda (try state return newBreak newContinue newThrow)
+    ; go through list in this try-block
+    'try))
+
+(define M_catch
+  (lambda (
 
 ; --------------------- VARIABLE / VALUE STATE FUNCTIONS ---------------------
 
