@@ -334,7 +334,7 @@
   (lambda (catch state return break continue throw)
     (if (null? catch)
         (state)
-        (M_block state reutrn break continue throw))))
+        (M_block state return break continue throw))))
     
 (define M_finally
   (lambda (finally state return break continue throw)
