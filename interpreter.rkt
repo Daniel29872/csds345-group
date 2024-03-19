@@ -310,6 +310,16 @@
       [(eq? (first-else-stmt statement) 'if)   (M_if (else-stmts statement) state return)]
       [else                                    (M_statement (first-else-stmt statement) state return break continue 'throw)])))
 
+(define M_try
+  (lambda (statement state return break continue)
+    (call/cc (throw) (M_try_catch (try statement)
+                                  (catch statement)
+                                  (finally statement)
+                                  state return
+                                  (lambda (s) (break (M_finally (finally statement) state return break continue)))
+                                  (lambda (s) (continue (M_finally (finally statement) state return break continue)))
+                                  (lambda (s) (throw (M_finally (finally statement) state return break continue)))))))
+
 ; --------------------- VARIABLE / VALUE STATE FUNCTIONS ---------------------
 
 (define var-name cadr)
