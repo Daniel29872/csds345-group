@@ -312,13 +312,18 @@
       [(eq? (first-else-stmt statement) 'if)   (M_if (else-stmts statement) state return break continue throw)]
       [else                                    (M_statement (first-else-stmt statement) state return break continue throw)])))
 
+
+(define try-block cadr)
+(define catch-block caddr)
+(define finally-block cadddr)
+
 (define M_try_catch_finally
   (lambda (statement state return break continue throw)
-    (call/cc (throw) (M_try (try statement)
+    (call/cc (throw) (M_try (try-block statement)
                                   state return
-                                  (lambda (s) (break (M_finally (finally statement) s return break continue throw)))
-                                  (lambda (s) (continue (M_finally (finally statement) s return break continue throw)))
-                                  (lambda (s) (throw (M_finally (finally statement) s return break continue throw)))))))
+                                  (lambda (s) (break (M_finally (finally-block statement) s return break continue throw)))
+                                  (lambda (s) (continue (M_finally (finally-block statement) s return break continue throw)))
+                                  (lambda (s) (throw (M_finally (finally-block statement) s return break continue throw)))))))
 
 (define M_try
   (lambda (try state return newBreak newContinue newThrow)
@@ -335,7 +340,7 @@
   (lambda (finally state return break continue throw)
     (if (null? finally)
         (state)
-        (M_block state return break continue throw)))
+        (M_block state return break continue throw))))
 
 ; --------------------- VARIABLE / VALUE STATE FUNCTIONS ---------------------
 
