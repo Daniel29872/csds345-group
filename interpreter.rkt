@@ -312,9 +312,9 @@
 
 (define M_try
   (lambda (statement state return break continue)
-    (call/cc (throw) (M_try_catch (try statement)
-                                  (catch statement)
-                                  (finally statement)
+    (call/cc (throw) (M_try_catch (try-block statement)
+                                  (catch-block statement)
+                                  (finally-block statement)
                                   state return
                                   (lambda (s) (break (M_finally (finally statement) state return break continue)))
                                   (lambda (s) (continue (M_finally (finally statement) state return break continue)))
