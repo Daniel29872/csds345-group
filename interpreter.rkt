@@ -9,12 +9,11 @@
 
 (define interpret
   (lambda (filename)
-    (call/cc (lambda (return) (interpret-acc (parser filename) (new-state) return breakError continueError throwError))))) ;<-- Proper errors should be shown for calling continuations in invalid places
+    (call/cc (lambda (return) (interpret-acc (parser filename) (new-state) return breakError continueError throwError)))))
 
 (define interpret-acc
   (lambda (syntax-tree state return break continue throw)
     (if (null? syntax-tree)
-        ; something to be done if no return call is acceptable
         (return "void")
         (interpret-acc (rest-of-tree syntax-tree) (M_statement (curr-statement syntax-tree) state return break continue throw) return break continue throw))))
 
@@ -30,10 +29,6 @@
   (lambda (e s)
     (error "Invalid throw call")))
 
-
-#|
-    New functions for updating environment
-|#
 
 (define new-state
   (lambda ()
@@ -75,10 +70,6 @@
         (cons (remove-n (vars-list state) (index-of (vars-list state)) (list (remove-n (vals-list state) (index-of (vars-list state)))))))))
 
 
-#|
-    New functions for state operations
-|#
-
 (define addBinding
   (lambda (state var val)
     (if (var-in-layer-vars? (top-layer-vars state) var)
@@ -109,13 +100,11 @@
   (lambda (layer var)
     (cond
       [(null? layer)                     (error "using before declaring" var)]
-                                                                 ;removes first var and val of layer to get rest of layer
       [(not (eq? (first-var layer) var)) (get-binding-from-layer (cons (rest-of-vars layer) (list (rest-of-vals layer))) var)]
       [(eq? (first-val layer) 'error)    (error "using before assigning " var)]
       [else                              (first-val layer)])))
 
-; Updates var binding in state. Searches for var in top layer and moves down layers until var found
-; Retuns error if var is not found in any layer
+
 (define updateBinding
   (lambda (state var val)
     (cond
@@ -124,7 +113,6 @@
                      (cons (update-layer-binding (top-layer state) var val) (rest-of-layers state))]
       [else          (cons (top-layer state) (updateBinding (rest-of-layers state) var val))])))
 
-; Returns a layer with update binding for var
 (define update-layer-binding
   (lambda (layer var val)
     (update-layer-binding-cps layer var val (lambda (vars vals) (cons vars (list vals))))))
@@ -136,7 +124,6 @@
       [(and (eq? (first-var layer) var) (same-type (first-val layer) val))
                      (return (vars-list layer) (cons val (rest-of-vals layer)))]
       [(eq? (first-var layer) var) (error "incorrect type assignment" var)]
-                                               ;removes first var and val of layer to get rest of layer
       [else          (update-layer-binding-cps (cons (rest-of-vars layer) (list (rest-of-vals layer))) var val
                                                (lambda (vars vals) (return (cons (first-var layer) vars) (cons (first-val layer) vals))))])))
 
@@ -162,29 +149,11 @@
       [(eq? (first-element ls) value) acc]
       [else                           (index-of-acc (rest-of-list ls) value (+ acc 1))])))
 
-; -------------UNUSED------------- ;
-; Get the nth element of the list and return its value
-(define get-n
-  (lambda (ls n)
-    (cond
-      [(null? ls) -1]
-      [(zero? n)  (first-element ls)]
-      [else       (get-n (rest-of-list ls) (- n 1))])))
-
-; Remove the nth element of the list and return the updated list
 (define remove-n
   (lambda (ls n)
     (if (zero? n)
         (rest-of-list ls)
         (cons (first-element ls) (remove-n (rest-of-list ls) (- n 1))))))
-
-; -------------UNUSED------------- ;
-; Update the nth element of the list and return the updated list
-(define update-n
-  (lambda (ls n value)
-    (if (zero? n)
-        (cons value (rest-of-list ls))
-        (cons (first-element ls) (update-n (rest-of-list ls) (- n 1) value)))))
 
 ; Check if two values a and b are the same type
 (define same-type
