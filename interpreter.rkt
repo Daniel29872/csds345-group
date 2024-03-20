@@ -266,10 +266,10 @@
       [(eq? (operator statement) 'var)      (M_declare statement state)]
       [(eq? (operator statement) '=)        (M_assignment statement state)]
       [(eq? (operator statement) 'return)   (M_return statement state return)]
-      [(eq? (operator statement) 'if)       (M_if statement state return break continue)]
+      [(eq? (operator statement) 'if)       (M_if statement state return break continue throw)]
       [(eq? (operator statement) 'while)    (M_while statement state return throw)]
-      [(eq? (operator statement) 'begin)    (M_block statement state return break continue)]
-      [(eq? (operator statement) 'try)      (M_try_catch_finally state return break continue)]
+      [(eq? (operator statement) 'begin)    (M_block (cdr statement) state return break continue throw)]
+      [(eq? (operator statement) 'try)      (M_try_catch_finally statement state return break continue throw)]
       [(eq? (operator statement) 'continue) (continue state)]
       [(eq? (operator statement) 'break)    (break state)]
       [(eq? (operator statement) 'throw)    (throw state)])))
@@ -284,14 +284,18 @@
 (define block-stmts cdr)
 
 (define M_block
-  (lambda (statement state return break continue)
-    (remove-layer (M_block-list (block-stmts statement) (add-layer state) return (lambda (s) (break (remove-layer s))) (lambda (s) (continue (remove-layer s)))))))
+  (lambda (statement state return break continue throw)
+    (remove-layer (M_block-list statement
+                                (add-layer state) return
+                                (lambda (s) (break (remove-layer s)))
+                                (lambda (s) (continue (remove-layer s)))
+                                (lambda (e s) (throw e (remove-layer s)))))))
 
 (define M_block-list
-  (lambda (stmt-list state return break continue)
+  (lambda (stmt-list state return break continue throw)
     (if (null? stmt-list)
         state
-        (M_block-list (rest-of-tree stmt-list) (M_statement (curr-statement stmt-list) state return break continue 'throw) return break continue))))
+        (M_block-list (rest-of-tree stmt-list) (M_statement (curr-statement stmt-list) state return break continue throw) return break continue throw))))
 
 (define M_while
   (lambda (statement state return throw)
@@ -326,9 +330,8 @@
                                   (lambda (e s) (throw (M_finally (finally-block statement) (M_catch (catch-block statement) (addBinding 'exception e s) return break continue throw) return break continue throw)))))))
 
 (define M_try
-  (lambda (try state return newBreak newContinue newThrow)
-    ; go through list in this try-block
-    'try))
+  (lambda (try-stmt finally-block state return newBreak newContinue newThrow)
+    (M_finally finally-block (M_block try-stmt state return newBreak newContinue newThrow) return newBreak newContinue newThrow)))
 
 (define M_catch
   (lambda (catch state return break continue throw)
