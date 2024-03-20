@@ -266,10 +266,10 @@
       [(eq? (operator statement) 'var)      (M_declare statement state)]
       [(eq? (operator statement) '=)        (M_assignment statement state)]
       [(eq? (operator statement) 'return)   (M_return statement state return)]
-      [(eq? (operator statement) 'if)       (M_if statement state return break continue)]
+      [(eq? (operator statement) 'if)       (M_if statement state return break continue throw)]
       [(eq? (operator statement) 'while)    (M_while statement state return throw)]
-      [(eq? (operator statement) 'begin)    (M_block statement state return break continue)]
-      [(eq? (operator statement) 'try)      (M_try_catch_finally state return break continue)]
+      [(eq? (operator statement) 'begin)    (M_block (cdr statement) state return break continue throw)]
+      [(eq? (operator statement) 'try)      (M_try_catch_finally statement state return break continue throw)]
       [(eq? (operator statement) 'continue) (continue state)]
       [(eq? (operator statement) 'break)    (break state)]
       [(eq? (operator statement) 'throw)    (throw state)])))
@@ -282,13 +282,13 @@
 (define else-stmts cdddr)
 (define first-else-stmt cadddr)
 (define block-stmts cdr)
-(define try cadr)
-(define catch caddr)
-(define finally cadddr)
+(define try-block cadr)
+(define catch-block caddr)
+(define finally-block cadddr)
 
 (define M_block
   (lambda (statement state return break continue throw)
-    (remove-layer (M_block-list (block-stmts statement)
+    (remove-layer (M_block-list statement
                                 (add-layer state) return
                                 (lambda (s) (break (remove-layer s)))
                                 (lambda (s) (continue (remove-layer s)))
@@ -321,24 +321,25 @@
 
 (define M_try_catch_finally
   (lambda (statement state return break continue throw)
-    (call/cc (throw) (M_try (try-block statement)
+    (call/cc (lambda (throw) (M_try (try-block statement)
+                                  (finally-block statement)
                                   state return
                                   (lambda (s) (break (M_finally (finally-block statement) s return break continue throw)))
                                   (lambda (s) (continue (M_finally (finally-block statement) s return break continue throw)))
-                                  (lambda (e s) (throw (M_finally (finally-block statement) (M_catch (catch-block statement) (addBinding 'exception e s) return break continue throw) return break continue throw)))))))
+                                  (lambda (e s) (throw (M_finally (finally-block statement) (M_catch (catch-block statement) (addBinding 'exception e s) return break continue throw) return break continue throw))))))))
 
 
 (define M_try
-  (lambda (try-stmt state return newBreak newContinue newThrow)
-    (M_block try-stmt state return newBreak newContinue newThrow)))
+  (lambda (try-stmt finally-block state return newBreak newContinue newThrow)
+    (M_finally finally-block (M_block try-stmt state return newBreak newContinue newThrow) return newBreak newContinue newThrow)))
 
 (define M_catch
   (lambda (catch-stmt state return break continue throw)
-    (M_block catch-stmt state return break continue)))
+    (M_block catch-stmt state return break continue throw)))
 
 (define M_finally
   (lambda (finally-stmt state return break continue throw)
-    (M_block finally-stmt state return break continue)))
+    (M_block finally-stmt state return break continue throw)))
 
 ; --------------------- VARIABLE / VALUE STATE FUNCTIONS ---------------------
 
