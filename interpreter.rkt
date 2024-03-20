@@ -323,11 +323,14 @@
 
 (define M_try_catch_finally
   (lambda (statement state return break continue throw)
-    (call/cc (throw) (M_try (try-block statement)
-                                  state return
-                                  (lambda (s) (break (M_finally (finally-block statement) s return break continue throw)))
-                                  (lambda (s) (continue (M_finally (finally-block statement) s return break continue throw)))
-                                  (lambda (e s) (throw (M_finally (finally-block statement) (M_catch (catch-block statement) (addBinding s (caadr (catch-block statement)) e) return break continue throw) return break continue throw))))))))
+    (call/cc
+     (lambda (throw) (M_try (try-block statement)
+                            (finally-block statement)
+                             state
+                             return
+                            (lambda (s) (break (M_finally (finally-block statement) s return break continue throw)))
+                            (lambda (s) (continue (M_finally (finally-block statement) s return break continue throw)))
+                            (lambda (e s) (throw (M_finally (finally-block statement) (M_catch (catch-block statement) (addBinding s (caadr (catch-block statement)) e) return break continue throw) return break continue throw))))))))
 
 
 (define M_try
