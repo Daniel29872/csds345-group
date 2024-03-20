@@ -337,7 +337,7 @@
   (lambda (try-stmt finally-block state return newBreak newContinue newThrow)
     (if (null? finally-block)
          (M_block try-stmt state return newBreak newContinue newThrow)
-         (M_finally (caaddr finally-block) (M_block try-stmt state return newBreak newContinue newThrow) return newBreak newContinue newThrow))))
+         (M_finally finally-block (M_block try-stmt state return newBreak newContinue newThrow) return newBreak newContinue newThrow))))
 
 (define M_catch
   (lambda (catch-stmt state return break continue throw)
