@@ -299,7 +299,7 @@
                              return
                             (lambda (s) (break (M_finally (finally-block statement) s return break continue throw)))
                             (lambda (s) (continue (M_finally (finally-block statement) s return break continue throw)))
-                            (lambda (e s) (newThrow (M_finally (finally-block statement) (M_catch (catch-block statement) (addBinding s (caadr (catch-block statement)) e) return break continue throw) return break continue throw))))))))
+                            (lambda (e s) (newThrow (M_finally (finally-block statement) (M_catch (catch-block statement) (addBinding s (catch-stmt-var (catch-block statement)) e) return break continue throw) return break continue throw))))))))
 
 
 (define M_try
@@ -312,13 +312,17 @@
   (lambda (catch-stmt state return break continue throw)
     (if (null? catch-stmt)
         state
-        (M_block (caddr catch-stmt) state return break continue throw))))
+        (M_block (rest-of-catch-stmt catch-stmt) state return break continue throw))))
 
 (define M_finally
   (lambda (finally-stmt state return break continue throw)
     (if (null? finally-stmt)
         state
-        (M_block (cadr finally-stmt) state return break continue throw))))
+        (M_block (rest-of-finally-stmt finally-stmt) state return break continue throw))))
+
+(define rest-of-finally-stmt cadr)
+(define rest-of-catch-stmt caddr)
+(define catch-stmt-var caadr)
 
 ; --------------------- VARIABLE / VALUE STATE FUNCTIONS ---------------------
 
