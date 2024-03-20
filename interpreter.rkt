@@ -272,7 +272,7 @@
       [(eq? (operator statement) 'try)      (M_try_catch_finally statement state return break continue throw)]
       [(eq? (operator statement) 'continue) (continue state)]
       [(eq? (operator statement) 'break)    (break state)]
-      [(eq? (operator statement) 'throw)    (throw state)])))
+      [(eq? (operator statement) 'throw)    (throw (cadr statement) state)])))
 
 
 ; --------------------- STATEMENT STATE FUNCTIONS ---------------------
@@ -326,20 +326,26 @@
                                   state return
                                   (lambda (s) (break (M_finally (finally-block statement) s return break continue throw)))
                                   (lambda (s) (continue (M_finally (finally-block statement) s return break continue throw)))
-                                  (lambda (e s) (throw (M_finally (finally-block statement) (M_catch (catch-block statement) (addBinding 'exception e s) return break continue throw) return break continue throw))))))))
+                                  (lambda (e s) (throw (M_finally (finally-block statement) (M_catch (catch-block statement) (addBinding s (caadr (catch-block statement)) e) return break continue throw) return break continue throw))))))))
 
 
 (define M_try
   (lambda (try-stmt finally-block state return newBreak newContinue newThrow)
-    (M_finally finally-block (M_block try-stmt state return newBreak newContinue newThrow) return newBreak newContinue newThrow)))
+    (if (null? finally-block)
+         (M_block try-stmt state return newBreak newContinue newThrow)
+         (M_finally (caaddr finally-block) (M_block try-stmt state return newBreak newContinue newThrow) return newBreak newContinue newThrow))))
 
 (define M_catch
   (lambda (catch-stmt state return break continue throw)
-    (M_block catch-stmt state return break continue throw)))
+    (if (null? catch-stmt)
+        state
+        (M_block (caddr catch-stmt) state return break continue throw))))
 
 (define M_finally
   (lambda (finally-stmt state return break continue throw)
-    (M_block finally-stmt state return break continue throw)))
+    (if (null? finally-stmt)
+        state
+        (M_block (cadr finally-stmt) state return break continue throw))))
 
 ; --------------------- VARIABLE / VALUE STATE FUNCTIONS ---------------------
 
