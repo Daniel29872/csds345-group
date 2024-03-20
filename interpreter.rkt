@@ -282,16 +282,23 @@
 (define else-stmts cdddr)
 (define first-else-stmt cadddr)
 (define block-stmts cdr)
+(define try cadr)
+(define catch caddr)
+(define finally cadddr)
 
 (define M_block
-  (lambda (statement state return break continue)
-    (remove-layer (M_block-list (block-stmts statement) (add-layer state) return (lambda (s) (break (remove-layer s))) (lambda (s) (continue (remove-layer s)))))))
+  (lambda (statement state return break continue throw)
+    (remove-layer (M_block-list (block-stmts statement)
+                                (add-layer state) return
+                                (lambda (s) (break (remove-layer s)))
+                                (lambda (s) (continue (remove-layer s)))
+                                (lambda (e s) (throw e (remove-layer s)))))))
 
 (define M_block-list
-  (lambda (stmt-list state return break continue)
+  (lambda (stmt-list state return break continue throw)
     (if (null? stmt-list)
         state
-        (M_block-list (rest-of-tree stmt-list) (M_statement (curr-statement stmt-list) state return break continue 'throw) return break continue))))
+        (M_block-list (rest-of-tree stmt-list) (M_statement (curr-statement stmt-list) state return break continue throw) return break continue throw))))
 
 (define M_while
   (lambda (statement state return throw)
@@ -305,28 +312,33 @@
         state)))
 
 (define M_if
-  (lambda (statement state return break continue)
+  (lambda (statement state return break continue throw)
     (cond
-      [(M_boolean (condition statement) state) (M_statement (body-stmt statement) state return break continue 'throw)]
+      [(M_boolean (condition statement) state) (M_statement (body-stmt statement) state return break continue throw)]
       [(null? (else-stmts statement))          state]
-      [(eq? (first-else-stmt statement) 'if)   (M_if (else-stmts statement) state return)]
-      [else                                    (M_statement (first-else-stmt statement) state return break continue 'throw)])))
+      [(eq? (first-else-stmt statement) 'if)   (M_if (else-stmts statement) state return break continue throw)]
+      [else                                    (M_statement (first-else-stmt statement) state return break continue throw)])))
 
 (define M_try_catch_finally
-  (lambda (statement state return break continue)
-    (call/cc (throw) (M_try (try statement)
+  (lambda (statement state return break continue throw)
+    (call/cc (throw) (M_try (try-block statement)
                                   state return
-                                  (lambda (s) (break (M_finally (finally statement) s return break continue)))
-                                  (lambda (s) (continue (M_finally (finally statement) s return break continue)))
-                                  (lambda (s) (throw (M_finally (finally statement) s return break continue)))))))
+                                  (lambda (s) (break (M_finally (finally-block statement) s return break continue throw)))
+                                  (lambda (s) (continue (M_finally (finally-block statement) s return break continue throw)))
+                                  (lambda (e s) (throw (M_finally (finally-block statement) (M_catch (catch-block statement) (addBinding 'exception e s) return break continue throw) return break continue throw)))))))
+
 
 (define M_try
-  (lambda (try state return newBreak newContinue newThrow)
-    ; go through list in this try-block
-    'try))
+  (lambda (try-stmt state return newBreak newContinue newThrow)
+    (M_block try-stmt state return newBreak newContinue newThrow)))
 
 (define M_catch
-  (lambda (
+  (lambda (catch-stmt state return break continue throw)
+    (M_block catch-stmt state return break continue)))
+
+(define M_finally
+  (lambda (finally-stmt state return break continue throw)
+    (M_block finally-stmt state return break continue)))
 
 ; --------------------- VARIABLE / VALUE STATE FUNCTIONS ---------------------
 
