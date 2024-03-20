@@ -282,9 +282,6 @@
 (define else-stmts cdddr)
 (define first-else-stmt cadddr)
 (define block-stmts cdr)
-(define try-block cadr)
-(define catch-block caddr)
-(define finally-block cadddr)
 
 (define M_block
   (lambda (statement state return break continue throw)
@@ -319,10 +316,14 @@
       [(eq? (first-else-stmt statement) 'if)   (M_if (else-stmts statement) state return break continue throw)]
       [else                                    (M_statement (first-else-stmt statement) state return break continue throw)])))
 
+
+(define try-block cadr)
+(define catch-block caddr)
+(define finally-block cadddr)
+
 (define M_try_catch_finally
   (lambda (statement state return break continue throw)
-    (call/cc (lambda (throw) (M_try (try-block statement)
-                                  (finally-block statement)
+    (call/cc (throw) (M_try (try-block statement)
                                   state return
                                   (lambda (s) (break (M_finally (finally-block statement) s return break continue throw)))
                                   (lambda (s) (continue (M_finally (finally-block statement) s return break continue throw)))
