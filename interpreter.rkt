@@ -323,7 +323,7 @@
                                   state return
                                   (lambda (s) (break (M_finally (finally-block statement) s return break continue throw)))
                                   (lambda (s) (continue (M_finally (finally-block statement) s return break continue throw)))
-                                  (lambda (s) (throw (M_finally (finally-block statement) (M_catch (catch-block statement) s return break continue throw) return break continue throw)))))))
+                                  (lambda (e s) (throw (M_finally (finally-block statement) (M_catch (catch-block statement) (addBinding 'exception e s) return break continue throw) return break continue throw)))))))
 
 (define M_try
   (lambda (try state return newBreak newContinue newThrow)
