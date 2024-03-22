@@ -4,8 +4,6 @@
 
 (require "simpleParser.rkt")
 
-(define rest-of-tree cdr)
-(define curr-statement car)
 
 (define interpret
   (lambda (filename)
@@ -17,6 +15,10 @@
         (return "error")
         (interpret-acc (rest-of-tree syntax-tree) (M_statement (curr-statement syntax-tree) state return break continue throw) return break continue throw))))
 
+
+; Break, continue, and throw continuations to be passed at the start. Will throw errors when called
+; outside of the appropriate locations such as a while loop body or the try-body of a try-catch-finally
+; statement.
 (define breakError
   (lambda (s)
     (error "Invalid use of break outside of loop")))
@@ -48,6 +50,10 @@
 
 (define top-layer car)
 (define rest-of-layers cdr)
+
+
+(define rest-of-tree cdr)
+(define curr-statement car)
 
 
 ; --------------------- BINDING FUNCTIONS ---------------------
@@ -228,7 +234,6 @@
 (define body-stmt caddr)
 (define else-stmts cdddr)
 (define first-else-stmt cadddr)
-(define block-stmts cdr)
 (define rest-of-finally-stmt cadr)
 (define rest-of-catch-stmt caddr)
 (define catch-stmt-var caadr)
