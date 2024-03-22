@@ -62,14 +62,6 @@
 (define rest-of-vars cdar)
 (define rest-of-vals cdadr)
 
-#| TO BE UPDATED |#
-(define removeBinding ; currently not used, but might be useful later
-  (lambda (state var)
-    (if (eq? (index-of (vars-list state) -1))
-        (error "using before declaring")
-        (cons (remove-n (vars-list state) (index-of (vars-list state)) (list (remove-n (vals-list state) (index-of (vars-list state)))))))))
-
-
 (define addBinding
   (lambda (state var val)
     (if (var-in-layer-vars? (top-layer-vars state) var)
@@ -139,22 +131,6 @@
         (list value)
         (cons (first-element ls) (add-last (rest-of-list ls) value)))))
 
-; Return the first index n where list[n] = value
-(define index-of (lambda (ls value) (index-of-acc ls value 0)))
-
-(define index-of-acc
-  (lambda (ls value acc)
-    (cond
-      [(null? ls)                     -1]
-      [(eq? (first-element ls) value) acc]
-      [else                           (index-of-acc (rest-of-list ls) value (+ acc 1))])))
-
-(define remove-n
-  (lambda (ls n)
-    (if (zero? n)
-        (rest-of-list ls)
-        (cons (first-element ls) (remove-n (rest-of-list ls) (- n 1))))))
-
 ; Check if two values a and b are the same type
 (define same-type
   (lambda (a b)
@@ -171,6 +147,8 @@
 (define leftoperand cadr)
 (define rightoperand caddr)
 (define rightoperand-list cddr)
+(define block-stmts cdr) 
+(define throw-value cadr)
 
 (define M_boolean
   (lambda (exp state)
@@ -200,7 +178,7 @@
             (if (number? (getBinding state exp))
                 (getBinding state exp)
                 (error "type error"))]
-      [(and (eq? (operator exp) '-) (null? (rightoperand-list exp)))  (- 0 (M_integer (leftoperand exp) state))] ; unary -
+      [(and (eq? (operator exp) '-) (null? (rightoperand-list exp)))  (- 0 (M_integer (leftoperand exp) state))]
       [(eq? (operator exp) '+)                                        (+ (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
       [(eq? (operator exp) '-)                                        (- (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
       [(eq? (operator exp) '*)                                        (* (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
@@ -236,12 +214,12 @@
       [(eq? (operator statement) '=)        (M_assignment statement state)]
       [(eq? (operator statement) 'return)   (M_return statement state return)]
       [(eq? (operator statement) 'if)       (M_if statement state return break continue throw)]
-      [(eq? (operator statement) 'while)    (M_while statement state return throw)]
-      [(eq? (operator statement) 'begin)    (M_block (cdr statement) state return break continue throw)]
+      [(eq? (operator statement) 'while)    (M_while statement state return break continue throw)]
+      [(eq? (operator statement) 'begin)    (M_block (block-stmts statement) state return break continue throw)]
       [(eq? (operator statement) 'try)      (M_try_catch_finally statement state return break continue throw)]
       [(eq? (operator statement) 'continue) (continue state)]
       [(eq? (operator statement) 'break)    (break state)]
-      [(eq? (operator statement) 'throw)    (throw (cadr statement) state)])))
+      [(eq? (operator statement) 'throw)    (throw (throw-value statement) state)])))
 
 
 ; --------------------- STATEMENT STATE FUNCTIONS ---------------------
@@ -251,6 +229,12 @@
 (define else-stmts cdddr)
 (define first-else-stmt cadddr)
 (define block-stmts cdr)
+(define rest-of-finally-stmt cadr)
+(define rest-of-catch-stmt caddr)
+(define catch-stmt-var caadr)
+(define try-block cadr)
+(define catch-block caddr)
+(define finally-block cadddr)
 
 ; Processes a list of statements and returns the state after interpreting each statement.
 ; Begins by adding a new layer to the state before interpreting the first statement and removes the
@@ -274,9 +258,9 @@
 ; While the condition-stmt is true, the body-stmts are interpreted. A new break continuation is passed which
 ; immediately return the state at that point.
 (define M_while
-  (lambda (statement state return throw)
+  (lambda (statement state return break continue throw)
     (call/cc
-     (lambda (break) (loop (condition statement) (body-stmt statement) state return break throw)))))
+     (lambda (newBreak) (loop (condition statement) (body-stmt statement) state return newBreak throw)))))
 
 ; Processes the body-stmts of the while loop and returns an updated state.
 ; A new continue continuation is passed into the statement being interpreted which will immediately 
@@ -294,11 +278,6 @@
       [(null? (else-stmts statement))          state]
       [(eq? (first-else-stmt statement) 'if)   (M_if (else-stmts statement) state return break continue throw)]
       [else                                    (M_statement (first-else-stmt statement) state return break continue throw)])))
-
-
-(define try-block cadr)
-(define catch-block caddr)
-(define finally-block cadddr)
 
 ; Processes statement and retuns an updated state.
 ; (try (try-block) (catch (e) (catch-block)) (finally (finally-block))): 
@@ -341,9 +320,6 @@
         state
         (M_block (rest-of-finally-stmt finally-stmt) state return break continue throw))))
 
-(define rest-of-finally-stmt cadr)
-(define rest-of-catch-stmt caddr)
-(define catch-stmt-var caadr)
 
 ; --------------------- VARIABLE / VALUE STATE FUNCTIONS ---------------------
 
