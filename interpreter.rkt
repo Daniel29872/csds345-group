@@ -14,20 +14,20 @@
 (define interpret-acc
   (lambda (syntax-tree state return break continue throw)
     (if (null? syntax-tree)
-        (return "void")
+        (return "error")
         (interpret-acc (rest-of-tree syntax-tree) (M_statement (curr-statement syntax-tree) state return break continue throw) return break continue throw))))
 
 (define breakError
   (lambda (s)
-    (error "Invalid break call")))
+    (error "Invalid use of break outside of loop")))
 
 (define continueError
   (lambda (s)
-    (error "Invalid continue call")))
+    (error "Invalid use of continue outside of loop")))
 
 (define throwError
   (lambda (e s)
-    (error "Invalid throw call")))
+    (error "Invalid use of throw outside of try block")))
 
 
 (define new-state
@@ -252,6 +252,9 @@
 (define first-else-stmt cadddr)
 (define block-stmts cdr)
 
+; Processes a list of statements and returns the state after interpreting each statement.
+; Begins by adding a new layer to the state before interpreting the first statement and removes the
+; layer after the last statement is interpreted.
 (define M_block
   (lambda (statement state return break continue throw)
     (remove-layer (M_block-list statement
@@ -260,17 +263,24 @@
                                 (lambda (s) (continue (remove-layer s)))
                                 (lambda (e s) (throw e (remove-layer s)))))))
 
+; Interprets a list of statements and returns the state after reaching the end.
 (define M_block-list
   (lambda (stmt-list state return break continue throw)
     (if (null? stmt-list)
         state
         (M_block-list (rest-of-tree stmt-list) (M_statement (curr-statement stmt-list) state return break continue throw) return break continue throw))))
 
+; Processes a statement in the form (while (condition-stmt) (body-stmts)) and retuns an updated state
+; While the condition-stmt is true, the body-stmts are interpreted. A new break continuation is passed which
+; immediately return the state at that point.
 (define M_while
   (lambda (statement state return throw)
     (call/cc
      (lambda (break) (loop (condition statement) (body-stmt statement) state return break throw)))))
 
+; Processes the body-stmts of the while loop and returns an updated state.
+; A new continue continuation is passed into the statement being interpreted which will immediately 
+; move on to the next iteration. 
 (define loop
   (lambda (condition body state return break throw)
     (if (M_boolean condition state)
@@ -290,6 +300,10 @@
 (define catch-block caddr)
 (define finally-block cadddr)
 
+; Processes statement and retuns an updated state.
+; (try (try-block) (catch (e) (catch-block)) (finally (finally-block))): 
+;     try-block is interpreted with new continuations for break, continue, and throw. If throw is called, 
+;     then catch-block and/or finally-block are called. Neither catch nor finally blocks are required.
 (define M_try_catch_finally
   (lambda (statement state return break continue throw)
     (call/cc
@@ -301,19 +315,26 @@
                             (lambda (s) (continue (M_finally (finally-block statement) s return break continue throw)))
                             (lambda (e s) (newThrow (M_finally (finally-block statement) (M_catch (catch-block statement) (addBinding s (catch-stmt-var (catch-block statement)) e) return break continue throw) return break continue throw))))))))
 
-
+; Processes in statement in the form (try-block) and returns an updated state.
+; The list of statements in the try-block is interpreted.
 (define M_try
   (lambda (try-stmt finally-block state return newBreak newContinue newThrow)
     (if (null? finally-block)
          (M_block try-stmt state return newBreak newContinue newThrow)
          (M_finally finally-block (M_block try-stmt state return newBreak newContinue newThrow) return newBreak newContinue newThrow))))
 
+; Processes in a statement in the form (catch-block) and retuns an updated state.
+; The list of statement in the catch-block is interpreted with the state containing the variable which
+; contains the error value thrown.
 (define M_catch
   (lambda (catch-stmt state return break continue throw)
     (if (null? catch-stmt)
         state
         (M_block (rest-of-catch-stmt catch-stmt) state return break continue throw))))
 
+; Processes in a statement in the form (finally-block) and returns an updated state.
+; The list of statements in the finally-block is interpreted. This is the last block which is interpreted
+; in a try-catch-finally statement if the original statement had a finally block. 
 (define M_finally
   (lambda (finally-stmt state return break continue throw)
     (if (null? finally-stmt)
@@ -330,6 +351,7 @@
 (define var-value caddr)
 (define var-value-list cddr)
 
+; Processes statement in the form (return val). Calls return continuation with val
 (define M_return
   (lambda (statement state return)
     (cond
@@ -337,10 +359,15 @@
       [(eq? (M_value (var-name statement) state) #f) (return 'false)]
       [else                                          (return (M_value (var-name statement) state))])))
     
+; Processes statement in the form (= var val) and retuns an updated state.
+; Updates binding of var with val in the state.
 (define M_assignment
    (lambda (statement state)
      (updateBinding state (var-name statement) (M_value (var-value statement) state))))
 
+; Processes statement in one of two forms and returns an updated state.
+; (var x): Adds binding x to the state with initial value 'error.
+; (var x val): Adds binding x to the state with initial value val.
 (define M_declare
   (lambda (statement state)
     (if (null? (var-value-list statement))
