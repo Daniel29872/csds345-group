@@ -64,7 +64,6 @@
 (define top-layer car)
 (define rest-of-layers cdr)
 
-
 (define rest-of-tree cdr)
 (define curr-statement car)
 
@@ -203,30 +202,30 @@
       [(eq? (operator exp) '*)                                        (* (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
       [(eq? (operator exp) '/)                                        (quotient (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
       [(eq? (operator exp) '%)                                        (remainder (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
-      [(eq? (operator exp) 'funcall)                                  (M_value exp state)
+      [(eq? (operator exp) 'funcall)                                  (M_value exp state)]
       [else                                                           (error "Not an Integer: " exp)])))
 
 (define M_value
   (lambda (statement state)
     (cond
-      [(number? statement)            statement]
-      [(not (list? statement))        (getBinding state statement)]
-      [(eq? (operator statement) '+)  (M_integer statement state)]
-      [(eq? (operator statement) '-)  (M_integer statement state)]
-      [(eq? (operator statement) '*)  (M_integer statement state)]
-      [(eq? (operator statement) '/)  (M_integer statement state)]
-      [(eq? (operator statement) '%)  (M_integer statement state)]
-      [(eq? (operator statement) '==) (M_boolean statement state)]
-      [(eq? (operator statement) '!=) (M_boolean statement state)]
-      [(eq? (operator statement) '<)  (M_boolean statement state)]
-      [(eq? (operator statement) '>)  (M_boolean statement state)]
-      [(eq? (operator statement) '<=) (M_boolean statement state)]
-      [(eq? (operator statement) '>=) (M_boolean statement state)]
-      [(eq? (operator statement) '&&) (M_boolean statement state)]
-      [(eq? (operator statement) '||) (M_boolean statement state)]
-      [(eq? (operator statement) '!)  (M_boolean statement state)]
+      [(number? statement)                 statement]
+      [(not (list? statement))             (getBinding state statement)]
+      [(eq? (operator statement) '+)       (M_integer statement state)]
+      [(eq? (operator statement) '-)       (M_integer statement state)]
+      [(eq? (operator statement) '*)       (M_integer statement state)]
+      [(eq? (operator statement) '/)       (M_integer statement state)]
+      [(eq? (operator statement) '%)       (M_integer statement state)]
+      [(eq? (operator statement) '==)      (M_boolean statement state)]
+      [(eq? (operator statement) '!=)      (M_boolean statement state)]
+      [(eq? (operator statement) '<)       (M_boolean statement state)]
+      [(eq? (operator statement) '>)       (M_boolean statement state)]
+      [(eq? (operator statement) '<=)      (M_boolean statement state)]
+      [(eq? (operator statement) '>=)      (M_boolean statement state)]
+      [(eq? (operator statement) '&&)      (M_boolean statement state)]
+      [(eq? (operator statement) '||)      (M_boolean statement state)]
+      [(eq? (operator statement) '!)       (M_boolean statement state)]
       [(eq? (operator statement) 'funcall) (M_func_value (getBinding state (cadr statement)) (cddr statement) state (lambda (a) a) (lambda (a) a) (lambda (a) a) (lambda (a) a))] 
-      [else                           (error "invalid operator")])))
+      [else                                (error "invalid operator")])))
 
 (define closure_formal_params car)
 (define closure_body cadr)
@@ -287,14 +286,22 @@
       [(list? (car state)) (cons (copy (car state)) (copy (cdr state)))]
       [else                (cons (car state) (copy (cdr state)))])))
 
+(define rest-of-state cdr)
+
+(define restore-scope
+  (lambda (state func-name)
+    (if (var-in-layer-vars? (top-layer-vars state) func-name)
+        state
+        (restore-scope (rest-of-state state) func-name))))
+
 (define make-closure
-  (lambda (formalparams body state)
-    (list formalparams body (lambda (s) (copy s)))))
+  (lambda (funcname formalparams body state)
+    (list formalparams body (lambda (s) (restore-scope (copy s) funcname)))))
 
 ; Takes in a function definition and creates a closure of the function to be added to the state.
 (define M_function
   (lambda (statement state)
-    (addBinding state (function-name statement) (make-closure (formal-params statement) (function-body statement) state))))
+    (addBinding state (function-name statement) (make-closure (function-name statement) (formal-params statement) (function-body statement) state))))
 
 ; Processes a list of statements and returns the state after interpreting each statement.
 ; Begins by adding a new layer to the state before interpreting the first statement and removes the
