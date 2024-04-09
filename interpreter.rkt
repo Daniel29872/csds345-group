@@ -7,14 +7,23 @@
 
 (define interpret
   (lambda (filename)
-    (interpret-acc (parser filename) (new-state) returnError breakError continueError throwError)))
+    (interpret-outer-acc (parser filename) (new-state) returnError breakError continueError throwError)))
 
-(define interpret-acc
+(define interpret-outer-acc
   (lambda (syntax-tree state return break continue throw)
     (if (null? syntax-tree)
         (M_func_value (getBinding state 'main) '() state return break continue throw)
-        (interpret-acc (rest-of-tree syntax-tree) (M_statement (curr-statement syntax-tree) state return break continue throw) return break continue throw))))
+        (interpret-outer-acc (rest-of-tree syntax-tree) (M_statement (curr-statement syntax-tree) state return break continue throw) return break continue throw))))
 
+(define interpret-inner
+  (lambda (syntax-tree state return break continue throw)
+    (call/cc (lambda (newReturn) (interpret-inner-acc syntax-tree state newReturn break continue throw)))))
+
+(define interpret-inner-acc
+  (lambda (syntax-tree state return break continue throw)
+    (if (null? syntax-tree)
+        (return "error")
+        (interpret-inner-acc (rest-of-tree syntax-tree) (M_statement (curr-statement syntax-tree) state return break continue throw) return break continue throw))))
 
 ; Return, break, continue, and throw continuations to be passed at the start. Will throw errors when called
 ; outside of the appropriate locations such as a while loop body or the try-body of a try-catch-finally
@@ -218,11 +227,15 @@
       [else                           (error "invalid operator")])))
 
 (define closure_formal_params car)
+(define closure_body cadr)
 (define closure_func caddr)
 
 (define M_func_value
   (lambda (closure argList state return break continue throw)
-    (bindParameters (closure_formal_params closure) argList (add-layer ((closure_func closure) state)) state)))
+    (interpret-inner
+     (closure_body closure)
+     (bindParameters (closure_formal_params closure) argList (add-layer ((closure_func closure) state)) state)
+     return break continue throw)))
 
 (define bindParameters
   (lambda (params args fstate state)
