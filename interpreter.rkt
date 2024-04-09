@@ -186,6 +186,7 @@
       [(eq? (operator exp) '&&) (and (M_boolean (leftoperand exp) state) (M_boolean (rightoperand exp) state))]
       [(eq? (operator exp) '||) (or  (M_boolean (leftoperand exp) state) (M_boolean (rightoperand exp) state))]
       [(eq? (operator exp) '!)  (not (M_boolean (leftoperand exp) state))]
+      [(eq? (operator exp) 'funcall)                                  (M_value exp state)]
       [else                     (error "Not a Boolean")])))
 
 (define M_integer
@@ -209,6 +210,8 @@
   (lambda (statement state)
     (cond
       [(number? statement)                 statement]
+      [(eq? statement 'true)                         #t]
+      [(eq? statement 'false)                        #f]
       [(not (list? statement))             (getBinding state statement)]
       [(eq? (operator statement) '+)       (M_integer statement state)]
       [(eq? (operator statement) '-)       (M_integer statement state)]
@@ -243,7 +246,7 @@
   (lambda (params args fstate state)
     (if (null? params)
         fstate
-        (bindParameters (cdr params) (cdr args) (addBinding fstate (car params) (M_integer (car args) state)) state))))
+        (bindParameters (cdr params) (cdr args) (addBinding fstate (car params) (M_value (car args) state)) state))))
 
 (define M_statement
   (lambda (statement state return break continue throw)
