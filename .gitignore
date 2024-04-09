@@ -3,3 +3,4 @@
 *.zo
 *.rkt#1#
 compiled/*
+interpreter.rkt~

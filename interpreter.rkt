@@ -2,7 +2,7 @@
 
 ; Group Members: Ulises Soto, Daniel Arnholt, Jimmy Ngo
 
-(require "simpleParser.rkt")
+(require "functionParser.rkt")
 
 
 (define interpret
@@ -240,6 +240,25 @@
 (define try-block cadr)
 (define catch-block caddr)
 (define finally-block cadddr)
+
+(define function-name cadr)
+(define formal-params caddr)
+(define function-body cadddr)
+
+(define copy
+  (lambda (state)
+    (cond
+      [(null? state)       '()]
+      [(list? (car state)) (cons (copy (car state)) (copy (cdr state)))]
+      [else                (cons (car state) (copy (cdr state)))])))
+
+(define make-closure
+  (lambda (formalparams body state)
+    (list formalparams body (copy state))))
+
+(define M_function
+  (lambda (statement state)
+    (addBinding state (function-name statement) (make-closure (formal-params statement) (function-body statement) state))))
 
 ; Processes a list of statements and returns the state after interpreting each statement.
 ; Begins by adding a new layer to the state before interpreting the first statement and removes the
