@@ -203,7 +203,8 @@
       [(eq? (operator exp) '*)                                        (* (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
       [(eq? (operator exp) '/)                                        (quotient (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
       [(eq? (operator exp) '%)                                        (remainder (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
-      [else                                                           (error "Not an Integer")])))
+      [(eq? (operator exp) 'funcall)                                  (M_value exp state)
+      [else                                                           (error "Not an Integer: " exp)])))
 
 (define M_value
   (lambda (statement state)
@@ -224,12 +225,14 @@
       [(eq? (operator statement) '&&) (M_boolean statement state)]
       [(eq? (operator statement) '||) (M_boolean statement state)]
       [(eq? (operator statement) '!)  (M_boolean statement state)]
+      [(eq? (operator statement) 'funcall) (M_func_value (getBinding state (cadr statement)) (cddr statement) state (lambda (a) a) (lambda (a) a) (lambda (a) a) (lambda (a) a))] 
       [else                           (error "invalid operator")])))
 
 (define closure_formal_params car)
 (define closure_body cadr)
 (define closure_func caddr)
 
+; Interprets a function body and returns the value after going through the body of the function.
 (define M_func_value
   (lambda (closure argList state return break continue throw)
     (interpret-inner
@@ -248,6 +251,7 @@
     (cond
       [(eq? (operator statement) 'var)      (M_declare statement state)]
       [(eq? (operator statement) 'function)  (M_function statement state)]
+      [(eq? (operator statement) 'funcall)  (M_func_value statement state return break continue throw)]
       [(eq? (operator statement) '=)        (M_assignment statement state)]
       [(eq? (operator statement) 'return)   (M_return statement state return)]
       [(eq? (operator statement) 'if)       (M_if statement state return break continue throw)]
@@ -287,6 +291,7 @@
   (lambda (formalparams body state)
     (list formalparams body (lambda (s) (copy s)))))
 
+; Takes in a function definition and creates a closure of the function to be added to the state.
 (define M_function
   (lambda (statement state)
     (addBinding state (function-name statement) (make-closure (formal-params statement) (function-body statement) state))))
