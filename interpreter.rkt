@@ -7,18 +7,22 @@
 
 (define interpret
   (lambda (filename)
-    (call/cc (lambda (return) (interpret-acc (parser filename) (new-state) return breakError continueError throwError)))))
+    (interpret-acc (parser filename) (new-state) returnError breakError continueError throwError)))
 
 (define interpret-acc
   (lambda (syntax-tree state return break continue throw)
     (if (null? syntax-tree)
-        (return "error")
+        (M_func_value (getBinding state 'main) '() state return break continue throw)
         (interpret-acc (rest-of-tree syntax-tree) (M_statement (curr-statement syntax-tree) state return break continue throw) return break continue throw))))
 
 
-; Break, continue, and throw continuations to be passed at the start. Will throw errors when called
+; Return, break, continue, and throw continuations to be passed at the start. Will throw errors when called
 ; outside of the appropriate locations such as a while loop body or the try-body of a try-catch-finally
 ; statement.
+(define returnError
+  (lambda (s)
+    (error "Invalid use of return outside of main")))
+
 (define breakError
   (lambda (s)
     (error "Invalid use of break outside of loop")))
@@ -213,10 +217,15 @@
       [(eq? (operator statement) '!)  (M_boolean statement state)]
       [else                           (error "invalid operator")])))
 
+(define M_func_value
+  (lambda (function argList state return break continue throw)
+    function))
+
 (define M_statement
   (lambda (statement state return break continue throw)
     (cond
       [(eq? (operator statement) 'var)      (M_declare statement state)]
+      [(eq? (operator statement) 'function)  (M_function statement state)]
       [(eq? (operator statement) '=)        (M_assignment statement state)]
       [(eq? (operator statement) 'return)   (M_return statement state return)]
       [(eq? (operator statement) 'if)       (M_if statement state return break continue throw)]
@@ -225,8 +234,7 @@
       [(eq? (operator statement) 'try)      (M_try_catch_finally statement state return break continue throw)]
       [(eq? (operator statement) 'continue) (continue state)]
       [(eq? (operator statement) 'break)    (break state)]
-      [(eq? (operator statement) 'throw)    (throw (throw-value statement) state)]
-      [(eq? (operator statement) 'function)  (M_function statement state)])))
+      [(eq? (operator statement) 'throw)    (throw (throw-value statement) state)])))
 
 
 ; --------------------- STATEMENT STATE FUNCTIONS ---------------------
@@ -255,7 +263,7 @@
 
 (define make-closure
   (lambda (formalparams body state)
-    (list formalparams body (copy state))))
+    (list formalparams body (lambda (s) (copy s)))))
 
 (define M_function
   (lambda (statement state)
