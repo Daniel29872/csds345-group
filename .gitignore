@@ -4,3 +4,5 @@
 *.rkt#1#
 compiled/*
 interpreter.rkt~
+.DS_Store
+exampleProgram.txt

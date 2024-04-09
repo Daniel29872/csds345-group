@@ -225,7 +225,8 @@
       [(eq? (operator statement) 'try)      (M_try_catch_finally statement state return break continue throw)]
       [(eq? (operator statement) 'continue) (continue state)]
       [(eq? (operator statement) 'break)    (break state)]
-      [(eq? (operator statement) 'throw)    (throw (throw-value statement) state)])))
+      [(eq? (operator statement) 'throw)    (throw (throw-value statement) state)]
+      [(eq? (operator statement) 'function)  (M_function statement state)])))
 
 
 ; --------------------- STATEMENT STATE FUNCTIONS ---------------------
