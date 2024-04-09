@@ -217,9 +217,18 @@
       [(eq? (operator statement) '!)  (M_boolean statement state)]
       [else                           (error "invalid operator")])))
 
+(define closure_formal_params car)
+(define closure_func caddr)
+
 (define M_func_value
-  (lambda (function argList state return break continue throw)
-    function))
+  (lambda (closure argList state return break continue throw)
+    (bindParameters (closure_formal_params closure) argList (add-layer ((closure_func closure) state)) state)))
+
+(define bindParameters
+  (lambda (params args fstate state)
+    (if (null? params)
+        fstate
+        (bindParameters (cdr params) (cdr args) (addBinding fstate (car params) (M_integer (car args) state)) state))))
 
 (define M_statement
   (lambda (statement state return break continue throw)
