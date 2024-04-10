@@ -252,11 +252,17 @@
        return break continue throw)
      state)))
 
+(define bothListsEmpty
+  (lambda (params args fstate)
+    (cond
+      [(not (null? params)) (error "not enough arguments")]
+      [(not (null? args))   (error "too many arguments")]
+      [else                 fstate])))
 
 (define bindParameters
   (lambda (params args fstate state)
-    (if (null? params)
-        fstate
+    (if (or (null? params) (null? args))
+        (bothListsEmpty params args fstate)
         (bindParameters (cdr params) (cdr args) (addBinding fstate (car params) (M_value (car args) state)) state))))
 
 (define M_statement
