@@ -12,7 +12,7 @@
 (define interpret-outer-acc
   (lambda (syntax-tree state return break continue throw)
     (if (null? syntax-tree)
-        (M_func_value (getBinding state 'main) '() state return break continue throw)
+        (M_func_value (getBinding state 'main) (list) state return break continue throw)
         (interpret-outer-acc (rest-of-tree syntax-tree) (M_statement (curr-statement syntax-tree) state return break continue throw) return break continue throw))))
 
 (define interpret-inner
@@ -59,7 +59,7 @@
 
 (define new-layer
   (lambda ()
-    '(() ())))
+    (list (list) (list))))
 
 (define top-layer car)
 (define rest-of-layers cdr)
@@ -80,7 +80,7 @@
   (lambda (state var)
     (cond
       [(null? state)                                   (error "using before declaring " var)]
-      [(var-in-layer-vars? (top-layer-vars state) var) (get-binding-from-layer (car state) var)]
+      [(var-in-layer-vars? (top-layer-vars state) var) (get-binding-from-layer (top-layer state) var)]
       [else                                            (getBinding (rest-of-layers state) var)])))
 
 (define updateBinding
@@ -111,9 +111,9 @@
 (define var-in-layer-vars?
   (lambda (layer-vars var)
     (cond
-      [(null? layer-vars)                   #f]
-      [(eq? (unbox (car layer-vars)) var)   #t]
-      [else                                 (var-in-layer-vars? (cdr layer-vars) var)])))
+      [(null? layer-vars)                             #f]
+      [(eq? (unbox (first-element layer-vars)) var)   #t]
+      [else                                           (var-in-layer-vars? (rest-of-list layer-vars) var)])))
 
 ; Get the binding of a variable from the given layer
 (define get-binding-from-layer
@@ -226,10 +226,12 @@
       [(eq? (operator statement) '&&)      (M_boolean statement state throw)]
       [(eq? (operator statement) '||)      (M_boolean statement state throw)]
       [(eq? (operator statement) '!)       (M_boolean statement state throw)]
-      [(eq? (operator statement) 'funcall) (M_func_value (getBinding state (cadr statement)) (cddr statement) state (lambda (a) a) breakError continueError (lambda (e s) (throw e state)))] 
+      [(eq? (operator statement) 'funcall) (M_func_value (getBinding state (closure_body statement)) (closure_arg_list statement) state
+                                                         (lambda (a) a) breakError continueError (lambda (e s) (throw e state)))] 
       [else                                (error "invalid operator")])))
 
 (define closure_formal_params car)
+(define closure_arg_list cddr)
 (define closure_body cadr)
 (define closure_func caddr)
 
@@ -241,6 +243,7 @@
      (bindParameters (closure_formal_params closure) argList (add-layer ((closure_func closure) state)) state)
      return break continue throw)))
 
+; Interprets a function body, but returns the state after going through the body of the function.
 (define M_func_state
   (lambda (closure argList state return break continue throw)
     (begin
@@ -250,6 +253,7 @@
        return break continue throw)
      state)))
 
+; Check if both lists provided are empty. Used to check if formal parameters count matches provided arguments count.
 (define bothListsEmpty
   (lambda (params args fstate)
     (cond
@@ -257,18 +261,21 @@
       [(not (null? args))   (error "too many arguments")]
       [else                 fstate])))
 
+; Bind each passed parameter with its variable name in the state
 (define bindParameters
   (lambda (params args fstate state)
     (if (or (null? params) (null? args))
         (bothListsEmpty params args fstate)
         (bindParameters (cdr params) (cdr args) (addBinding fstate (car params) (M_value (car args) state throwError)) state))))
 
+; Evaluate a statement, and modify the state accordingly
 (define M_statement
   (lambda (statement state return break continue throw)
     (cond
       [(eq? (operator statement) 'var)      (M_declare statement state throw)]
       [(eq? (operator statement) 'function) (M_function statement state)]
-      [(eq? (operator statement) 'funcall)  (M_func_state (getBinding state (cadr statement)) (cddr statement) state return break continue throw)]
+      [(eq? (operator statement) 'funcall)  (M_func_state (getBinding state (closure_body statement)) (closure_arg_list statement) state
+                                                          return break continue throw)]
       [(eq? (operator statement) '=)        (M_assignment statement state throw)]
       [(eq? (operator statement) 'return)   (M_return statement state return throw)]
       [(eq? (operator statement) 'if)       (M_if statement state return break continue throw)]
@@ -300,7 +307,7 @@
 (define copy
   (lambda (state)
     (cond
-      [(null? state)       '()]
+      [(null? state)       (list)]
       [(list? (car state)) (cons (copy (car state)) (copy (cdr state)))]
       [else                (cons (car state) (copy (cdr state)))])))
 
