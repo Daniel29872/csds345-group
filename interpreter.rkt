@@ -136,7 +136,7 @@
     (cond
       [(null? layer)   (error "using before declaring" var)]
       [(and (eq? (unbox (first-var layer)) var) (same-type (unbox (first-val layer)) val))
-                       (return (vars-list layer) (cons (box val) (rest-of-vals layer)))]
+                       (return (vars-list layer) (cons (begin (set-box! (first-val layer) val) (first-val layer)) (rest-of-vals layer)))]
       [(eq? (unbox (first-var layer)) var)
                        (error "incorrect type assignment" var)]
       [else            (update-layer-binding-cps (cons (rest-of-vars layer) (list (rest-of-vals layer))) var val
