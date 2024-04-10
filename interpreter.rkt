@@ -79,18 +79,16 @@
 (define getBinding
   (lambda (state var)
     (cond
-      [(null? state) (error "using before declaring " var)]
-      [(var-in-layer-vars? (top-layer-vars state) var)
-                     (get-binding-from-layer (car state) var)]
-      [else          (getBinding (rest-of-layers state) var)])))
+      [(null? state)                                   (error "using before declaring " var)]
+      [(var-in-layer-vars? (top-layer-vars state) var) (get-binding-from-layer (car state) var)]
+      [else                                            (getBinding (rest-of-layers state) var)])))
 
 (define updateBinding
   (lambda (state var val)
     (cond
-      [(null? state) (error "using before declaring" var)]
-      [(var-in-layer-vars? (top-layer-vars state) var)
-                     (cons (update-layer-binding (top-layer state) var val) (rest-of-layers state))]
-      [else          (cons (top-layer state) (updateBinding (rest-of-layers state) var val))])))
+      [(null? state)                                   (error "using before declaring" var)]
+      [(var-in-layer-vars? (top-layer-vars state) var) (cons (update-layer-binding (top-layer state) var val) (rest-of-layers state))]
+      [else                                            (cons (top-layer state) (updateBinding (rest-of-layers state) var val))])))
 
 ; --------------------- HELPER FUNCTIONS ---------------------
 
@@ -211,8 +209,8 @@
   (lambda (statement state throw)
     (cond
       [(number? statement)                 statement]
-      [(eq? statement 'true)                         #t]
-      [(eq? statement 'false)                        #f]
+      [(eq? statement 'true)               #t]
+      [(eq? statement 'false)              #f]
       [(not (list? statement))             (getBinding state statement)]
       [(eq? (operator statement) '+)       (M_integer statement state throw)]
       [(eq? (operator statement) '-)       (M_integer statement state throw)]
@@ -362,9 +360,9 @@
   (lambda (statement state return break continue throw)
     (cond
       [(M_boolean (condition statement) state throw) (M_statement (body-stmt statement) state return break continue throw)]
-      [(null? (else-stmts statement))          state]
-      [(eq? (first-else-stmt statement) 'if)   (M_if (else-stmts statement) state return break continue throw)]
-      [else                                    (M_statement (first-else-stmt statement) state return break continue throw)])))
+      [(null? (else-stmts statement))                state]
+      [(eq? (first-else-stmt statement) 'if)         (M_if (else-stmts statement) state return break continue throw)]
+      [else                                          (M_statement (first-else-stmt statement) state return break continue throw)])))
 
 ; Processes statement and retuns an updated state.
 ; (try (try-block) (catch (e) (catch-block)) (finally (finally-block))): 
@@ -420,7 +418,7 @@
     (cond
       [(eq? (M_value (var-name statement) state throw) #t) (return 'true)]
       [(eq? (M_value (var-name statement) state throw) #f) (return 'false)]
-      [else                                          (return (M_value (var-name statement) state throw))])))
+      [else                                                (return (M_value (var-name statement) state throw))])))
     
 ; Processes statement in the form (= var val) and retuns an updated state.
 ; Updates binding of var with val in the state.
