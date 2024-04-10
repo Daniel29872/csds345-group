@@ -243,6 +243,16 @@
      (bindParameters (closure_formal_params closure) argList (add-layer ((closure_func closure) state)) state)
      return break continue throw)))
 
+(define M_func_state
+  (lambda (closure argList state return break continue throw)
+    (begin
+      (interpret-inner
+       (closure_body closure)
+       (bindParameters (closure_formal_params closure) argList (add-layer ((closure_func closure) state)) state)
+       return break continue throw)
+     state)))
+
+
 (define bindParameters
   (lambda (params args fstate state)
     (if (null? params)
@@ -253,8 +263,8 @@
   (lambda (statement state return break continue throw)
     (cond
       [(eq? (operator statement) 'var)      (M_declare statement state)]
-      [(eq? (operator statement) 'function)  (M_function statement state)]
-      [(eq? (operator statement) 'funcall)  (M_func_value statement state return break continue throw)]
+      [(eq? (operator statement) 'function) (M_function statement state)]
+      [(eq? (operator statement) 'funcall)  (M_func_state (getBinding state (cadr statement)) (cddr statement) state (lambda (a) a) (lambda (a) a) (lambda (a) a) (lambda (a) a))]
       [(eq? (operator statement) '=)        (M_assignment statement state)]
       [(eq? (operator statement) 'return)   (M_return statement state return)]
       [(eq? (operator statement) 'if)       (M_if statement state return break continue throw)]
