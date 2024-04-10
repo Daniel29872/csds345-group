@@ -70,26 +70,11 @@
 
 ; --------------------- BINDING FUNCTIONS ---------------------
 
-(define vars-list car)
-(define vals-list cadr)
-(define top-layer-vars caar)
-
-(define first-var caar)
-(define first-val caadr)
-
-(define rest-of-vars cdar)
-(define rest-of-vals cdadr)
-
 (define addBinding
   (lambda (state var val)
     (if (var-in-layer-vars? (top-layer-vars state) var)
         (error "already declared variable " var)
         (cons (add-to-layer (top-layer state) var val) (rest-of-layers state)))))
-
-(define add-to-layer
-  (lambda (layer var val)
-    (cons (add-last (vars-list layer) var) (list (add-last (vals-list layer) val)))))
-
 
 (define getBinding
   (lambda (state var)
@@ -99,22 +84,6 @@
                      (get-binding-from-layer (car state) var)]
       [else          (getBinding (rest-of-layers state) var)])))
 
-(define var-in-layer-vars?
-  (lambda (layer-vars var)
-    (cond
-      [(null? layer-vars)         #f]
-      [(eq? (car layer-vars) var) #t]
-      [else                       (var-in-layer-vars? (cdr layer-vars) var)])))
-
-(define get-binding-from-layer
-  (lambda (layer var)
-    (cond
-      [(null? layer)                     (error "using before declaring" var)]
-      [(not (eq? (first-var layer) var)) (get-binding-from-layer (cons (rest-of-vars layer) (list (rest-of-vals layer))) var)]
-      [(eq? (first-val layer) 'error)    (error "using before assigning " var)]
-      [else                              (first-val layer)])))
-
-
 (define updateBinding
   (lambda (state var val)
     (cond
@@ -123,6 +92,41 @@
                      (cons (update-layer-binding (top-layer state) var val) (rest-of-layers state))]
       [else          (cons (top-layer state) (updateBinding (rest-of-layers state) var val))])))
 
+; --------------------- HELPER FUNCTIONS ---------------------
+
+(define vars-list car)
+(define vals-list cadr)
+(define top-layer-vars caar)
+(define first-var caar)
+(define first-val caadr)
+(define rest-of-vars cdar)
+(define rest-of-vals cdadr)
+(define first-element car)
+(define rest-of-list cdr)
+
+; Add the variable/value pair to the layer of the state
+(define add-to-layer
+  (lambda (layer var val)
+    (cons (add-last (vars-list layer) var) (list (add-last (vals-list layer) val)))))
+
+; Return true if the varibale is declared in the layer, false otherwise
+(define var-in-layer-vars?
+  (lambda (layer-vars var)
+    (cond
+      [(null? layer-vars)                   #f]
+      [(eq? (unbox (car layer-vars)) var)   #t]
+      [else                                 (var-in-layer-vars? (cdr layer-vars) var)])))
+
+; Get the binding of a variable from the given layer
+(define get-binding-from-layer
+  (lambda (layer var)
+    (cond
+      [(null? layer)                               (error "using before declaring" var)]
+      [(not (eq? (unbox (first-var layer)) var))   (get-binding-from-layer (cons (rest-of-vars layer) (list (rest-of-vals layer))) var)]
+      [(eq? (unbox (first-val layer)) 'error)      (error "using before assigning " var)]
+      [else                                        (unbox (first-val layer))])))
+
+; Update the value of a variable in the layer
 (define update-layer-binding
   (lambda (layer var val)
     (update-layer-binding-cps layer var val (lambda (vars vals) (cons vars (list vals))))))
@@ -130,23 +134,20 @@
 (define update-layer-binding-cps
   (lambda (layer var val return)
     (cond
-      [(null? layer) (error "using before declaring" var)]
-      [(and (eq? (first-var layer) var) (same-type (first-val layer) val))
-                     (return (vars-list layer) (cons val (rest-of-vals layer)))]
-      [(eq? (first-var layer) var) (error "incorrect type assignment" var)]
-      [else          (update-layer-binding-cps (cons (rest-of-vars layer) (list (rest-of-vals layer))) var val
+      [(null? layer)   (error "using before declaring" var)]
+      [(and (eq? (unbox (first-var layer)) var) (same-type (unbox (first-val layer)) val))
+                       (return (vars-list layer) (cons (box val) (rest-of-vals layer)))]
+      [(eq? (unbox (first-var layer)) var)
+                       (error "incorrect type assignment" var)]
+      [else            (update-layer-binding-cps (cons (rest-of-vars layer) (list (rest-of-vals layer))) var val
                                                (lambda (vars vals) (return (cons (first-var layer) vars) (cons (first-val layer) vals))))])))
 
-; --------------------- HELPER FUNCTIONS ---------------------
-
-(define first-element car)
-(define rest-of-list cdr)
 
 ; Add the value to the end of the list and return the updated list
 (define add-last
   (lambda (ls value)
     (if (null? ls)
-        (list value)
+        (list (box value))
         (cons (first-element ls) (add-last (rest-of-list ls) value)))))
 
 ; Check if two values a and b are the same type
