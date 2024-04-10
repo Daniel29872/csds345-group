@@ -263,7 +263,7 @@
   (lambda (params args fstate state)
     (if (or (null? params) (null? args))
         (bothListsEmpty params args fstate)
-        (bindParameters (cdr params) (cdr args) (addBinding fstate (car params) (M_value (car args) state)) state))))
+        (bindParameters (cdr params) (cdr args) (addBinding fstate (car params) (M_value (car args) state throwError)) state))))
 
 (define M_statement
   (lambda (statement state return break continue throw)
