@@ -172,23 +172,23 @@
 (define M_boolean
   (lambda (exp state throw)
     (cond
-      [(eq? exp 'true)          #t]
-      [(eq? exp 'false)         #f]
+      [(eq? exp 'true)                #t]
+      [(eq? exp 'false)               #f]
       [(not (list? exp))
             (if (boolean? (getBinding state exp))
                 (getBinding state exp)
                 (error "type error"))]
-      [(eq? (operator exp) '==) (eq? (M_integer (leftoperand exp) state throw) (M_integer (rightoperand exp) state throw))]
-      [(eq? (operator exp) '!=) (not (eq? (M_integer (leftoperand exp) state throw) (M_integer (rightoperand exp) state throw)))]
-      [(eq? (operator exp) '<)  (<   (M_integer (leftoperand exp) state throw) (M_integer (rightoperand exp) state throw))]
-      [(eq? (operator exp) '>)  (>   (M_integer (leftoperand exp) state throw) (M_integer (rightoperand exp) state throw))]
-      [(eq? (operator exp) '<=) (<=  (M_integer (leftoperand exp) state throw) (M_integer (rightoperand exp) state throw))]
-      [(eq? (operator exp) '>=) (>=  (M_integer (leftoperand exp) state throw) (M_integer (rightoperand exp) state throw))]
-      [(eq? (operator exp) '&&) (and (M_boolean (leftoperand exp) state throw) (M_boolean (rightoperand exp) state throw))]
-      [(eq? (operator exp) '||) (or  (M_boolean (leftoperand exp) state throw) (M_boolean (rightoperand exp) state throw))]
-      [(eq? (operator exp) '!)  (not (M_boolean (leftoperand exp) state throw))]
-      [(eq? (operator exp) 'funcall)                                  (M_value exp state throw)]
-      [else                     (error "Not a Boolean")])))
+      [(eq? (operator exp) '==)       (eq? (M_integer (leftoperand exp) state throw) (M_integer (rightoperand exp) state throw))]
+      [(eq? (operator exp) '!=)       (not (eq? (M_integer (leftoperand exp) state throw) (M_integer (rightoperand exp) state throw)))]
+      [(eq? (operator exp) '<)        (<   (M_integer (leftoperand exp) state throw) (M_integer (rightoperand exp) state throw))]
+      [(eq? (operator exp) '>)        (>   (M_integer (leftoperand exp) state throw) (M_integer (rightoperand exp) state throw))]
+      [(eq? (operator exp) '<=)       (<=  (M_integer (leftoperand exp) state throw) (M_integer (rightoperand exp) state throw))]
+      [(eq? (operator exp) '>=)       (>=  (M_integer (leftoperand exp) state throw) (M_integer (rightoperand exp) state throw))]
+      [(eq? (operator exp) '&&)       (and (M_boolean (leftoperand exp) state throw) (M_boolean (rightoperand exp) state throw))]
+      [(eq? (operator exp) '||)       (or  (M_boolean (leftoperand exp) state throw) (M_boolean (rightoperand exp) state throw))]
+      [(eq? (operator exp) '!)        (not (M_boolean (leftoperand exp) state throw))]
+      [(eq? (operator exp) 'funcall)  (M_value exp state throw)]
+      [else                           (error "Not a Boolean")])))
 
 (define M_integer
   (lambda (exp state throw)
@@ -211,8 +211,8 @@
   (lambda (statement state throw)
     (cond
       [(number? statement)                 statement]
-      [(eq? statement 'true)                         #t]
-      [(eq? statement 'false)                        #f]
+      [(eq? statement 'true)               #t]
+      [(eq? statement 'false)              #f]
       [(not (list? statement))             (getBinding state statement)]
       [(eq? (operator statement) '+)       (M_integer statement state throw)]
       [(eq? (operator statement) '-)       (M_integer statement state throw)]
