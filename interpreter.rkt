@@ -226,7 +226,7 @@
       [(eq? (operator statement) '&&)      (M_boolean statement state throw)]
       [(eq? (operator statement) '||)      (M_boolean statement state throw)]
       [(eq? (operator statement) '!)       (M_boolean statement state throw)]
-      [(eq? (operator statement) 'funcall) (M_func_value (getBinding state (cadr statement)) (cddr statement) state (lambda (a) a) breakError continueError throw)] 
+      [(eq? (operator statement) 'funcall) (M_func_value (getBinding state (cadr statement)) (cddr statement) state (lambda (a) a) breakError continueError (lambda (e s) (throw e state)))] 
       [else                                (error "invalid operator")])))
 
 (define closure_formal_params car)
@@ -277,7 +277,7 @@
       [(eq? (operator statement) 'try)      (M_try_catch_finally statement state return break continue throw)]
       [(eq? (operator statement) 'continue) (continue state)]
       [(eq? (operator statement) 'break)    (break state)]
-      [(eq? (operator statement) 'throw)    (throw (throw-value statement) state)])))
+      [(eq? (operator statement) 'throw)    (throw (M_value (throw-value statement) state throw) state)])))
 
 
 ; --------------------- STATEMENT STATE FUNCTIONS ---------------------
