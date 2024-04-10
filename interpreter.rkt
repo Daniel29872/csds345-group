@@ -246,7 +246,7 @@
     (begin
       (interpret-inner
        (closure_body closure)
-       (bindParameters (closure_formal_params closure) argList (add-layer ((closure_func closure) state throwError)) state)
+       (bindParameters (closure_formal_params closure) argList (add-layer ((closure_func closure) state)) state)
        return break continue throw)
      state)))
 
