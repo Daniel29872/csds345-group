@@ -15,6 +15,9 @@
         (M_func_value (getBinding state 'main) (list) state return break continue throw)
         (interpret-outer-acc (rest-of-tree syntax-tree) (M_statement (curr-statement syntax-tree) state return break continue throw) return break continue throw))))
 
+; Interprets the statemnets in function. Each statement will return a state that will be used to evalute
+; the next statement. When return is called in the program, then then return continuation is called,
+; moving out of the function. 
 (define interpret-inner
   (lambda (syntax-tree state return break continue throw)
     (call/cc (lambda (newReturn) (interpret-inner-acc syntax-tree state newReturn break continue throw)))))
@@ -363,6 +366,9 @@
         (loop condition body (M_statement body state return break (lambda (s) (break (loop condition body s return break throw))) throw) return break throw)
         state)))
 
+; Process and if statement and returns an updated state
+; If the condition statemnt is true, the the body statemtn is interpreted. Multiple if statmenets can
+; be inclded and will be interpreted if condition was false.
 (define M_if
   (lambda (statement state return break continue throw)
     (cond
