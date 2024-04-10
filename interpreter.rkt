@@ -170,7 +170,7 @@
 (define throw-value cadr)
 
 (define M_boolean
-  (lambda (exp state)
+  (lambda (exp state throw)
     (cond
       [(eq? exp 'true)          #t]
       [(eq? exp 'false)         #f]
@@ -178,57 +178,57 @@
             (if (boolean? (getBinding state exp))
                 (getBinding state exp)
                 (error "type error"))]
-      [(eq? (operator exp) '==) (eq? (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
-      [(eq? (operator exp) '!=) (not (eq? (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state)))]
-      [(eq? (operator exp) '<)  (<   (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
-      [(eq? (operator exp) '>)  (>   (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
-      [(eq? (operator exp) '<=) (<=  (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
-      [(eq? (operator exp) '>=) (>=  (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
-      [(eq? (operator exp) '&&) (and (M_boolean (leftoperand exp) state) (M_boolean (rightoperand exp) state))]
-      [(eq? (operator exp) '||) (or  (M_boolean (leftoperand exp) state) (M_boolean (rightoperand exp) state))]
-      [(eq? (operator exp) '!)  (not (M_boolean (leftoperand exp) state))]
-      [(eq? (operator exp) 'funcall)                                  (M_value exp state)]
+      [(eq? (operator exp) '==) (eq? (M_integer (leftoperand exp) state throw) (M_integer (rightoperand exp) state throw))]
+      [(eq? (operator exp) '!=) (not (eq? (M_integer (leftoperand exp) state throw) (M_integer (rightoperand exp) state throw)))]
+      [(eq? (operator exp) '<)  (<   (M_integer (leftoperand exp) state throw) (M_integer (rightoperand exp) state throw))]
+      [(eq? (operator exp) '>)  (>   (M_integer (leftoperand exp) state throw) (M_integer (rightoperand exp) state throw))]
+      [(eq? (operator exp) '<=) (<=  (M_integer (leftoperand exp) state throw) (M_integer (rightoperand exp) state throw))]
+      [(eq? (operator exp) '>=) (>=  (M_integer (leftoperand exp) state throw) (M_integer (rightoperand exp) state throw))]
+      [(eq? (operator exp) '&&) (and (M_boolean (leftoperand exp) state throw) (M_boolean (rightoperand exp) state throw))]
+      [(eq? (operator exp) '||) (or  (M_boolean (leftoperand exp) state throw) (M_boolean (rightoperand exp) state throw))]
+      [(eq? (operator exp) '!)  (not (M_boolean (leftoperand exp) state throw))]
+      [(eq? (operator exp) 'funcall)                                  (M_value exp state throw)]
       [else                     (error "Not a Boolean")])))
 
 (define M_integer
-  (lambda (exp state)
+  (lambda (exp state throw)
     (cond
       [(number? exp)                                                  exp]
       [(not (list? exp))
             (if (number? (getBinding state exp))
                 (getBinding state exp)
                 (error "type error"))]
-      [(and (eq? (operator exp) '-) (null? (rightoperand-list exp)))  (- 0 (M_integer (leftoperand exp) state))]
-      [(eq? (operator exp) '+)                                        (+ (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
-      [(eq? (operator exp) '-)                                        (- (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
-      [(eq? (operator exp) '*)                                        (* (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
-      [(eq? (operator exp) '/)                                        (quotient (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
-      [(eq? (operator exp) '%)                                        (remainder (M_integer (leftoperand exp) state) (M_integer (rightoperand exp) state))]
-      [(eq? (operator exp) 'funcall)                                  (M_value exp state)]
+      [(and (eq? (operator exp) '-) (null? (rightoperand-list exp)))  (- 0 (M_integer (leftoperand exp) state throw))]
+      [(eq? (operator exp) '+)                                        (+ (M_integer (leftoperand exp) state throw) (M_integer (rightoperand exp) state throw))]
+      [(eq? (operator exp) '-)                                        (- (M_integer (leftoperand exp) state throw) (M_integer (rightoperand exp) state throw))]
+      [(eq? (operator exp) '*)                                        (* (M_integer (leftoperand exp) state throw) (M_integer (rightoperand exp) state throw))]
+      [(eq? (operator exp) '/)                                        (quotient (M_integer (leftoperand exp) state throw) (M_integer (rightoperand exp) state throw))]
+      [(eq? (operator exp) '%)                                        (remainder (M_integer (leftoperand exp) state throw) (M_integer (rightoperand exp) state throw))]
+      [(eq? (operator exp) 'funcall)                                  (M_value exp state throw)]
       [else                                                           (error "Not an Integer: " exp)])))
 
 (define M_value
-  (lambda (statement state)
+  (lambda (statement state throw)
     (cond
       [(number? statement)                 statement]
       [(eq? statement 'true)                         #t]
       [(eq? statement 'false)                        #f]
       [(not (list? statement))             (getBinding state statement)]
-      [(eq? (operator statement) '+)       (M_integer statement state)]
-      [(eq? (operator statement) '-)       (M_integer statement state)]
-      [(eq? (operator statement) '*)       (M_integer statement state)]
-      [(eq? (operator statement) '/)       (M_integer statement state)]
-      [(eq? (operator statement) '%)       (M_integer statement state)]
-      [(eq? (operator statement) '==)      (M_boolean statement state)]
-      [(eq? (operator statement) '!=)      (M_boolean statement state)]
-      [(eq? (operator statement) '<)       (M_boolean statement state)]
-      [(eq? (operator statement) '>)       (M_boolean statement state)]
-      [(eq? (operator statement) '<=)      (M_boolean statement state)]
-      [(eq? (operator statement) '>=)      (M_boolean statement state)]
-      [(eq? (operator statement) '&&)      (M_boolean statement state)]
-      [(eq? (operator statement) '||)      (M_boolean statement state)]
-      [(eq? (operator statement) '!)       (M_boolean statement state)]
-      [(eq? (operator statement) 'funcall) (M_func_value (getBinding state (cadr statement)) (cddr statement) state (lambda (a) a) (lambda (a) a) (lambda (a) a) (lambda (a) a))] 
+      [(eq? (operator statement) '+)       (M_integer statement state throw)]
+      [(eq? (operator statement) '-)       (M_integer statement state throw)]
+      [(eq? (operator statement) '*)       (M_integer statement state throw)]
+      [(eq? (operator statement) '/)       (M_integer statement state throw)]
+      [(eq? (operator statement) '%)       (M_integer statement state throw)]
+      [(eq? (operator statement) '==)      (M_boolean statement state throw)]
+      [(eq? (operator statement) '!=)      (M_boolean statement state throw)]
+      [(eq? (operator statement) '<)       (M_boolean statement state throw)]
+      [(eq? (operator statement) '>)       (M_boolean statement state throw)]
+      [(eq? (operator statement) '<=)      (M_boolean statement state throw)]
+      [(eq? (operator statement) '>=)      (M_boolean statement state throw)]
+      [(eq? (operator statement) '&&)      (M_boolean statement state throw)]
+      [(eq? (operator statement) '||)      (M_boolean statement state throw)]
+      [(eq? (operator statement) '!)       (M_boolean statement state throw)]
+      [(eq? (operator statement) 'funcall) (M_func_value (getBinding state (cadr statement)) (cddr statement) state (lambda (a) a) breakError continueError throw)] 
       [else                                (error "invalid operator")])))
 
 (define closure_formal_params car)
@@ -257,16 +257,16 @@
   (lambda (params args fstate state)
     (if (null? params)
         fstate
-        (bindParameters (cdr params) (cdr args) (addBinding fstate (car params) (M_value (car args) state)) state))))
+        (bindParameters (cdr params) (cdr args) (addBinding fstate (car params) (M_value (car args) state throwError)) state))))
 
 (define M_statement
   (lambda (statement state return break continue throw)
     (cond
-      [(eq? (operator statement) 'var)      (M_declare statement state)]
+      [(eq? (operator statement) 'var)      (M_declare statement state throw)]
       [(eq? (operator statement) 'function) (M_function statement state)]
-      [(eq? (operator statement) 'funcall)  (M_func_state (getBinding state (cadr statement)) (cddr statement) state (lambda (a) a) (lambda (a) a) (lambda (a) a) (lambda (a) a))]
-      [(eq? (operator statement) '=)        (M_assignment statement state)]
-      [(eq? (operator statement) 'return)   (M_return statement state return)]
+      [(eq? (operator statement) 'funcall)  (M_func_state (getBinding state (cadr statement)) (cddr statement) state return break continue throw)]
+      [(eq? (operator statement) '=)        (M_assignment statement state throw)]
+      [(eq? (operator statement) 'return)   (M_return statement state return throw)]
       [(eq? (operator statement) 'if)       (M_if statement state return break continue throw)]
       [(eq? (operator statement) 'while)    (M_while statement state return break continue throw)]
       [(eq? (operator statement) 'begin)    (M_block (block-stmts statement) state return break continue throw)]
@@ -348,14 +348,14 @@
 ; move on to the next iteration. 
 (define loop
   (lambda (condition body state return break throw)
-    (if (M_boolean condition state)
+    (if (M_boolean condition state throw)
         (loop condition body (M_statement body state return break (lambda (s) (break (loop condition body s return break throw))) throw) return break throw)
         state)))
 
 (define M_if
   (lambda (statement state return break continue throw)
     (cond
-      [(M_boolean (condition statement) state) (M_statement (body-stmt statement) state return break continue throw)]
+      [(M_boolean (condition statement) state throw) (M_statement (body-stmt statement) state return break continue throw)]
       [(null? (else-stmts statement))          state]
       [(eq? (first-else-stmt statement) 'if)   (M_if (else-stmts statement) state return break continue throw)]
       [else                                    (M_statement (first-else-stmt statement) state return break continue throw)])))
@@ -410,23 +410,23 @@
 
 ; Processes statement in the form (return val). Calls return continuation with val
 (define M_return
-  (lambda (statement state return)
+  (lambda (statement state return throw)
     (cond
-      [(eq? (M_value (var-name statement) state) #t) (return 'true)]
-      [(eq? (M_value (var-name statement) state) #f) (return 'false)]
-      [else                                          (return (M_value (var-name statement) state))])))
+      [(eq? (M_value (var-name statement) state throw) #t) (return 'true)]
+      [(eq? (M_value (var-name statement) state throw) #f) (return 'false)]
+      [else                                          (return (M_value (var-name statement) state throw))])))
     
 ; Processes statement in the form (= var val) and retuns an updated state.
 ; Updates binding of var with val in the state.
 (define M_assignment
-   (lambda (statement state)
-     (updateBinding state (var-name statement) (M_value (var-value statement) state))))
+   (lambda (statement state throw)
+     (updateBinding state (var-name statement) (M_value (var-value statement) state throw))))
 
 ; Processes statement in one of two forms and returns an updated state.
 ; (var x): Adds binding x to the state with initial value 'error.
 ; (var x val): Adds binding x to the state with initial value val.
 (define M_declare
-  (lambda (statement state)
+  (lambda (statement state throw)
     (if (null? (var-value-list statement))
         (addBinding state (var-name statement) 'error)
-        (addBinding state (var-name statement) (M_value (var-value statement) state)))))
+        (addBinding state (var-name statement) (M_value (var-value statement) state throw)))))
