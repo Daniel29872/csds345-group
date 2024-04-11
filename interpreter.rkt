@@ -64,6 +64,7 @@
     (list (list) (list))))
 
 
+
 ; --------------------- BINDING FUNCTIONS ---------------------
 
 (define addBinding
@@ -85,6 +86,8 @@
       [(null? state)                                   (error "using before declaring" var)]
       [(var-in-layer-vars? (top-layer-vars state) var) (cons (update-layer-binding (top-layer state) var val) (rest-of-layers state))]
       [else                                            (cons (top-layer state) (updateBinding (rest-of-layers state) var val))])))
+
+
 
 ; --------------------- EVALUATION STATE FUNCTIONS ---------------------
 
@@ -201,6 +204,8 @@
 (define M_function
   (lambda (statement state)
     (addBinding state (function-name statement) (make-closure (function-name statement) (formal-params statement) (function-body statement) state))))
+
+
 
 ; --------------------- STATEMENT STATE FUNCTIONS ---------------------
 
