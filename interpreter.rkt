@@ -47,7 +47,6 @@
   (lambda (e s)
     (error "Invalid use of throw outside of try block")))
 
-
 (define new-state
   (lambda ()
     (list (new-layer))))
@@ -63,12 +62,6 @@
 (define new-layer
   (lambda ()
     (list (list) (list))))
-
-(define top-layer car)
-(define rest-of-layers cdr)
-
-(define rest-of-tree cdr)
-(define curr-statement car)
 
 
 ; --------------------- BINDING FUNCTIONS ---------------------
@@ -93,83 +86,9 @@
       [(var-in-layer-vars? (top-layer-vars state) var) (cons (update-layer-binding (top-layer state) var val) (rest-of-layers state))]
       [else                                            (cons (top-layer state) (updateBinding (rest-of-layers state) var val))])))
 
-; --------------------- HELPER FUNCTIONS ---------------------
-
-(define vars-list car)
-(define vals-list cadr)
-(define top-layer-vars caar)
-(define first-var caar)
-(define first-val caadr)
-(define rest-of-vars cdar)
-(define rest-of-vals cdadr)
-(define first-element car)
-(define rest-of-list cdr)
-
-; Add the variable/value pair to the layer of the state
-(define add-to-layer
-  (lambda (layer var val)
-    (cons (add-last (vars-list layer) var) (list (add-last (vals-list layer) val)))))
-
-; Return true if the varibale is declared in the layer, false otherwise
-(define var-in-layer-vars?
-  (lambda (layer-vars var)
-    (cond
-      [(null? layer-vars)                             #f]
-      [(eq? (unbox (first-element layer-vars)) var)   #t]
-      [else                                           (var-in-layer-vars? (rest-of-list layer-vars) var)])))
-
-; Get the binding of a variable from the given layer
-(define get-binding-from-layer
-  (lambda (layer var)
-    (cond
-      [(null? layer)                               (error "using before declaring" var)]
-      [(not (eq? (unbox (first-var layer)) var))   (get-binding-from-layer (cons (rest-of-vars layer) (list (rest-of-vals layer))) var)]
-      [(eq? (unbox (first-val layer)) 'error)      (error "using before assigning " var)]
-      [else                                        (unbox (first-val layer))])))
-
-; Update the value of a variable in the layer
-(define update-layer-binding
-  (lambda (layer var val)
-    (update-layer-binding-cps layer var val (lambda (vars vals) (cons vars (list vals))))))
-
-(define update-layer-binding-cps
-  (lambda (layer var val return)
-    (cond
-      [(null? layer)   (error "using before declaring" var)]
-      [(and (eq? (unbox (first-var layer)) var) (same-type (unbox (first-val layer)) val))
-                       (return (vars-list layer) (cons (begin (set-box! (first-val layer) val) (first-val layer)) (rest-of-vals layer)))]
-      [(eq? (unbox (first-var layer)) var)
-                       (error "incorrect type assignment" var)]
-      [else            (update-layer-binding-cps (cons (rest-of-vars layer) (list (rest-of-vals layer))) var val
-                                               (lambda (vars vals) (return (cons (first-var layer) vars) (cons (first-val layer) vals))))])))
-
-
-; Add the value to the end of the list and return the updated list
-(define add-last
-  (lambda (ls value)
-    (if (null? ls)
-        (list (box value))
-        (cons (first-element ls) (add-last (rest-of-list ls) value)))))
-
-; Check if two values a and b are the same type
-(define same-type
-  (lambda (a b)
-    (cond
-      [(or (eq? a 'error) (eq? b 'error)) #t]
-      [(and (number? a) (number? b))      #t]
-      [(and (boolean? a) (boolean? b))    #t]
-      [else                               #f])))
-
-
 ; --------------------- EVALUATION STATE FUNCTIONS ---------------------
 
-(define operator car)
-(define leftoperand cadr)
-(define rightoperand caddr)
-(define rightoperand-list cddr)
-(define block-stmts cdr) 
-(define throw-value cadr)
-
+; Handles the evaluation of a boolean expression.
 (define M_boolean
   (lambda (exp state throw)
     (cond
@@ -191,6 +110,7 @@
       [(eq? (operator exp) 'funcall)  (M_value exp state throw)]
       [else                           (error "Not a Boolean")])))
 
+; Handles the evaluation of an integer expression.
 (define M_integer
   (lambda (exp state throw)
     (cond
@@ -208,6 +128,7 @@
       [(eq? (operator exp) 'funcall)                                  (M_value exp state throw)]
       [else                                                           (error "Not an Integer: " exp)])))
 
+; Handles the evaluation of any general expression.
 (define M_value
   (lambda (statement state throw)
     (cond
@@ -233,11 +154,6 @@
                                                          (lambda (a) a) breakError continueError (lambda (e s) (throw e state)))] 
       [else                                (error "invalid operator")])))
 
-(define closure_formal_params car)
-(define closure_arg_list cddr)
-(define closure_body cadr)
-(define closure_func caddr)
-
 ; Interprets a function body and returns the value after going through the body of the function.
 (define M_func_value
   (lambda (closure argList state return break continue throw)
@@ -255,14 +171,6 @@
        (bindParameters (closure_formal_params closure) argList (add-layer ((closure_func closure) state)) state)
        return break continue throw)
      state)))
-
-; Check if both lists provided are empty. Used to check if formal parameters count matches provided arguments count.
-(define bothListsEmpty
-  (lambda (params args fstate)
-    (cond
-      [(not (null? params)) (error "not enough arguments")]
-      [(not (null? args))   (error "too many arguments")]
-      [else                 fstate])))
 
 ; Bind each passed parameter with its variable name in the state
 (define bindParameters
@@ -289,6 +197,10 @@
       [(eq? (operator statement) 'break)    (break state)]
       [(eq? (operator statement) 'throw)    (throw (M_value (throw-value statement) state throw) state)])))
 
+; Takes in a function definition and creates a closure of the function to be added to the state.
+(define M_function
+  (lambda (statement state)
+    (addBinding state (function-name statement) (make-closure (function-name statement) (formal-params statement) (function-body statement) state))))
 
 ; --------------------- STATEMENT STATE FUNCTIONS ---------------------
 
@@ -309,6 +221,12 @@
 
 (define rest-of-state cdr)
 
+; Generates the function closure using the given function name, parameters, body, and the state.
+(define make-closure
+  (lambda (funcname formalparams body state)
+    (list formalparams body (lambda (s) (restore-scope (copy s) funcname)))))
+
+; Used when calling a function to reduce the state to the scope of which it was defined.
 (define restore-scope
   (lambda (state func-name)
     (if (var-in-layer-vars? (top-layer-vars state) func-name)
@@ -411,13 +329,6 @@
         state
         (M_block (rest-of-finally-stmt finally-stmt) state return break continue throw))))
 
-
-; --------------------- VARIABLE / VALUE STATE FUNCTIONS ---------------------
-
-(define var-name cadr)
-(define var-value caddr)
-(define var-value-list cddr)
-
 ; Processes statement in the form (return val). Calls return continuation with val
 (define M_return
   (lambda (statement state return throw)
@@ -440,3 +351,121 @@
     (if (null? (var-value-list statement))
         (addBinding state (var-name statement) 'error)
         (addBinding state (var-name statement) (M_value (var-value statement) state throw)))))
+
+
+
+; --------------------- HELPER FUNCTIONS ---------------------
+
+; Add the variable/value pair to the layer of the state
+(define add-to-layer
+  (lambda (layer var val)
+    (cons (add-last (vars-list layer) var) (list (add-last (vals-list layer) val)))))
+
+; Return true if the varibale is declared in the layer, false otherwise
+(define var-in-layer-vars?
+  (lambda (layer-vars var)
+    (cond
+      [(null? layer-vars)                             #f]
+      [(eq? (unbox (first-element layer-vars)) var)   #t]
+      [else                                           (var-in-layer-vars? (rest-of-list layer-vars) var)])))
+
+; Get the binding of a variable from the given layer
+(define get-binding-from-layer
+  (lambda (layer var)
+    (cond
+      [(null? layer)                               (error "using before declaring" var)]
+      [(not (eq? (unbox (first-var layer)) var))   (get-binding-from-layer (cons (rest-of-vars layer) (list (rest-of-vals layer))) var)]
+      [(eq? (unbox (first-val layer)) 'error)      (error "using before assigning " var)]
+      [else                                        (unbox (first-val layer))])))
+
+; Update the value of a variable in the layer
+(define update-layer-binding
+  (lambda (layer var val)
+    (update-layer-binding-cps layer var val (lambda (vars vals) (cons vars (list vals))))))
+
+(define update-layer-binding-cps
+  (lambda (layer var val return)
+    (cond
+      [(null? layer)   (error "using before declaring" var)]
+      [(and (eq? (unbox (first-var layer)) var) (same-type (unbox (first-val layer)) val))
+                       (return (vars-list layer) (cons (begin (set-box! (first-val layer) val) (first-val layer)) (rest-of-vals layer)))]
+      [(eq? (unbox (first-var layer)) var)
+                       (error "incorrect type assignment" var)]
+      [else            (update-layer-binding-cps (cons (rest-of-vars layer) (list (rest-of-vals layer))) var val
+                                               (lambda (vars vals) (return (cons (first-var layer) vars) (cons (first-val layer) vals))))])))
+
+; Add the value to the end of the list and return the updated list
+(define add-last
+  (lambda (ls value)
+    (if (null? ls)
+        (list (box value))
+        (cons (first-element ls) (add-last (rest-of-list ls) value)))))
+
+; Check if two values a and b are the same type
+(define same-type
+  (lambda (a b)
+    (cond
+      [(or (eq? a 'error) (eq? b 'error)) #t]
+      [(and (number? a) (number? b))      #t]
+      [(and (boolean? a) (boolean? b))    #t]
+      [else                               #f])))
+
+; Generates a copy of the given list. Used to copy the state for functions.
+(define copy
+  (lambda (state)
+    (cond
+      [(null? state)       (list)]
+      [(list? (car state)) (cons (copy (car state)) (copy (cdr state)))]
+      [else                (cons (car state) (copy (cdr state)))])))
+
+; Check if both lists provided are empty. Used to check if formal parameters count matches provided arguments count.
+(define bothListsEmpty
+  (lambda (params args fstate)
+    (cond
+      [(not (null? params)) (error "not enough arguments")]
+      [(not (null? args))   (error "too many arguments")]
+      [else                 fstate])))
+
+
+
+; --------------------- ABSTRACTION... ---------------------
+(define top-layer car)
+(define rest-of-layers cdr)
+(define rest-of-tree cdr)
+(define curr-statement car)
+(define vars-list car)
+(define vals-list cadr)
+(define top-layer-vars caar)
+(define first-var caar)
+(define first-val caadr)
+(define rest-of-vars cdar)
+(define rest-of-vals cdadr)
+(define first-element car)
+(define rest-of-list cdr)
+(define operator car)
+(define leftoperand cadr)
+(define rightoperand caddr)
+(define rightoperand-list cddr)
+(define block-stmts cdr) 
+(define throw-value cadr)
+(define closure_formal_params car)
+(define closure_arg_list cddr)
+(define closure_body cadr)
+(define closure_func caddr)
+(define condition cadr)
+(define body-stmt caddr)
+(define else-stmts cdddr)
+(define first-else-stmt cadddr)
+(define rest-of-finally-stmt cadr)
+(define rest-of-catch-stmt caddr)
+(define catch-stmt-var caadr)
+(define try-block cadr)
+(define catch-block caddr)
+(define finally-block cadddr)
+(define function-name cadr)
+(define formal-params caddr)
+(define function-body cadddr)
+(define var-name cadr)
+(define var-value caddr)
+(define var-value-list cddr)
+(define rest-of-state cdr)
