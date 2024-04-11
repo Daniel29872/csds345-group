@@ -58,7 +58,7 @@
 
 (define remove-layer
   (lambda (state)
-    (cdr state)))
+    (rest-of-layers state)))
 
 (define new-layer
   (lambda ()
@@ -229,7 +229,7 @@
       [(eq? (operator statement) '&&)      (M_boolean statement state throw)]
       [(eq? (operator statement) '||)      (M_boolean statement state throw)]
       [(eq? (operator statement) '!)       (M_boolean statement state throw)]
-      [(eq? (operator statement) 'funcall) (M_func_value (getBinding state (closure_body statement)) (closure_arg_list statement) state
+      [(eq? (operator statement) 'funcall) (M_func_value (getBinding state (function-name statement)) (var-value-list statement) state
                                                          (lambda (a) a) breakError continueError (lambda (e s) (throw e state)))] 
       [else                                (error "invalid operator")])))
 
@@ -277,7 +277,7 @@
     (cond
       [(eq? (operator statement) 'var)      (M_declare statement state throw)]
       [(eq? (operator statement) 'function) (M_function statement state)]
-      [(eq? (operator statement) 'funcall)  (M_func_state (getBinding state (closure_body statement)) (closure_arg_list statement) state
+      [(eq? (operator statement) 'funcall)  (M_func_state (getBinding state (function-name statement)) (var-value-list statement) state
                                                           return break continue throw)]
       [(eq? (operator statement) '=)        (M_assignment statement state throw)]
       [(eq? (operator statement) 'return)   (M_return statement state return throw)]
@@ -307,13 +307,6 @@
 (define formal-params caddr)
 (define function-body cadddr)
 
-(define copy
-  (lambda (state)
-    (cond
-      [(null? state)       (list)]
-      [(list? (car state)) (cons (copy (car state)) (copy (cdr state)))]
-      [else                (cons (car state) (copy (cdr state)))])))
-
 (define rest-of-state cdr)
 
 (define restore-scope
@@ -324,7 +317,7 @@
 
 (define make-closure
   (lambda (funcname formalparams body state)
-    (list formalparams body (lambda (s) (restore-scope (copy s) funcname)))))
+    (list formalparams body (lambda (s) (restore-scope s funcname)))))
 
 ; Takes in a function definition and creates a closure of the function to be added to the state.
 (define M_function
@@ -386,8 +379,8 @@
     (call/cc
      (lambda (newThrow) (M_try (try-block statement)
                             (finally-block statement)
-                             state
-                             return
+                            state
+                            return
                             (lambda (s) (break (M_finally (finally-block statement) s return break continue throw)))
                             (lambda (s) (continue (M_finally (finally-block statement) s return break continue throw)))
                             (lambda (e s) (newThrow (M_finally (finally-block statement) (M_catch (catch-block statement) (addBinding s (catch-stmt-var (catch-block statement)) e) return break continue throw) return break continue throw))))))))
