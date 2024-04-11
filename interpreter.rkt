@@ -4,7 +4,7 @@
 
 (require "functionParser.rkt")
 
-
+; Outer layer of the interpreter which reads in the global variables and function definitions
 (define interpret
   (lambda (filename)
     (interpret-outer-acc (parser filename) (new-state) returnError breakError continueError throwError)))
@@ -204,28 +204,6 @@
 
 ; --------------------- STATEMENT STATE FUNCTIONS ---------------------
 
-(define condition cadr)
-(define body-stmt caddr)
-(define else-stmts cdddr)
-(define first-else-stmt cadddr)
-(define rest-of-finally-stmt cadr)
-(define rest-of-catch-stmt caddr)
-(define catch-stmt-var caadr)
-(define try-block cadr)
-(define catch-block caddr)
-(define finally-block cadddr)
-
-(define function-name cadr)
-(define formal-params caddr)
-(define function-body cadddr)
-
-(define rest-of-state cdr)
-
-; Generates the function closure using the given function name, parameters, body, and the state.
-(define make-closure
-  (lambda (funcname formalparams body state)
-    (list formalparams body (lambda (s) (restore-scope (copy s) funcname)))))
-
 ; Used when calling a function to reduce the state to the scope of which it was defined.
 (define restore-scope
   (lambda (state func-name)
@@ -233,14 +211,10 @@
         state
         (restore-scope (rest-of-state state) func-name))))
 
+; Generates the function closure using the given function name, parameters, body, and the state.
 (define make-closure
   (lambda (funcname formalparams body state)
     (list formalparams body (lambda (s) (restore-scope s funcname)))))
-
-; Takes in a function definition and creates a closure of the function to be added to the state.
-(define M_function
-  (lambda (statement state)
-    (addBinding state (function-name statement) (make-closure (function-name statement) (formal-params statement) (function-body statement) state))))
 
 ; Processes a list of statements and returns the state after interpreting each statement.
 ; Begins by adding a new layer to the state before interpreting the first statement and removes the
