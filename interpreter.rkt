@@ -2,11 +2,11 @@
 
 ; Group Members: Ulises Soto, Daniel Arnholt, Jimmy Ngo
 
-(require "functionParser.rkt")
+(require "classParser.rkt")
 
 ; Outer layer of the interpreter which reads in the global variables and function definitions
 (define interpret
-  (lambda (filename)
+  (lambda (filename classname)
     (interpret-outer-acc (parser filename) (new-state) returnError breakError continueError throwError)))
 
 (define interpret-outer-acc
