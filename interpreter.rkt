@@ -227,6 +227,36 @@
   (lambda (funcname formalparams body state)
     (list formalparams body (lambda (s) (restore-scope s funcname)))))
 
+(define make-class-closure
+  (lambda (class)
+    ; a list of: (superclass) (methods) (constructorrs) (static fields) (instance fields) 
+    (list (caddar class) (get-class-methods (get-class-body class)) (get-class-static-fields (get-class-body class)) (get-class-instance-fields (get-class-body class)))))
+
+(define get-class-body
+  (lambda (class)
+    (car (cdddar class))))
+
+(define get-class-methods
+  (lambda (class-body)
+    (cond
+      [(null? class-body) '()]
+      [(eq? (caar class-body) 'function) (cons (car class-body) (get-class-methods (cdr class-body)))]
+      [else                       (get-class-methods (cdr class-body))])))
+
+(define get-class-static-fields
+  (lambda (class-body)
+    (cond
+      [(null? class-body) '()]
+      [(eq? (caar class-body) 'static-var) (cons (car class-body) (get-class-static-fields (cdr class-body)))]
+      [else                               (get-class-static-fields (cdr class-body))])))
+
+(define get-class-instance-fields
+  (lambda (class-body)
+    (cond
+      [(null? class-body) '()]
+      [(eq? (caar class-body) 'var) (cons (car class-body) (get-class-instance-fields (cdr class-body)))]
+      [else                         (get-class-static-fields (cdr class-body))])))
+
 ; Processes a list of statements and returns the state after interpreting each statement.
 ; Begins by adding a new layer to the state before interpreting the first statement and removes the
 ; layer after the last statement is interpreted.
