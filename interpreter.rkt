@@ -209,6 +209,12 @@
 
 ; --------------------- STATEMENT STATE FUNCTIONS ---------------------
 
+(define fields-list cadr)
+
+(define instance-closure
+  (lambda (type)
+    (list type (fields-list (get-class-closure type)))))
+
 ; Used when calling a function to reduce the state to the scope of which it was defined.
 (define restore-scope
   (lambda (state func-name)
