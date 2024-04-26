@@ -239,7 +239,7 @@
 (define make-class-closure
   (lambda (class)
     ; a list of: (superclass) (methods) (constructorrs) (static fields) (instance fields) 
-    (list (cadr (caddr class)) (get-class-methods (get-class-body class)) (get-class-static-fields (get-class-body class)) (get-class-instance-fields (get-class-body class)))))
+    (list (cadr (caddr class)) (get-class-methods (get-class-body class)) (get-class-static-methods (get-class-body class)) (get-class-instance-fields (get-class-body class)) (get-class-static-fields (get-class-body class)))))
 
 (define get-class-body
   (lambda (class)
@@ -257,6 +257,13 @@
     (cond
       [(null? class-body) '()]
       [(eq? (caar class-body) 'static-var) (cons (car class-body) (get-class-static-fields (cdr class-body)))]
+      [else                               (get-class-static-fields (cdr class-body))])))
+
+(define get-class-static-fields
+  (lambda (class-body)
+    (cond
+      [(null? class-body) '()]
+      [(eq? (caar class-body) 'static-function) (cons (car class-body) (get-class-static-fields (cdr class-body)))]
       [else                               (get-class-static-fields (cdr class-body))])))
 
 (define get-class-instance-fields
