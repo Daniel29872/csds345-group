@@ -211,6 +211,10 @@
 
 (define fields-list cadr)
 
+(define instance-closure
+  (lambda (type)
+    (list type (fields-list (make-class-closure type)))))
+
 ; Used when calling a function to reduce the state to the scope of which it was defined.
 (define restore-scope
   (lambda (state func-name)
@@ -235,11 +239,11 @@
 (define make-class-closure
   (lambda (class)
     ; a list of: (superclass) (methods) (constructorrs) (static fields) (instance fields) 
-    (list (get-super-class (super-class-list class)) (get-class-methods (get-class-body class)) (get-class-static-fields (get-class-body class)) (get-class-instance-fields (get-class-body class)))))
+    (list (cadr (caddr class)) (get-class-methods (get-class-body class)) (get-class-static-fields (get-class-body class)) (get-class-instance-fields (get-class-body class)))))
 
 (define get-class-body
   (lambda (class)
-    (car (cdddar class))))
+    (cadddr class)))
 
 (define get-class-methods
   (lambda (class-body)
