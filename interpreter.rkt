@@ -7,10 +7,10 @@
 ; Outer layer of the interpreter which reads in the global variables and function definitions
 (define interpret
   (lambda (filename classname)
-    (interpret-outer-acc (parser filename) (new-state) returnError breakError continueError throwError)))
+    (interpret-outer-acc (parser filename) classname (new-state))))
 
 (define interpret-outer-acc
-  (lambda (syntax-tree state return break continue throw)
+  (lambda (syntax-tree classname state)
     (if (null? syntax-tree)
         (M_func_value (getBinding state 'main) (list) state return break continue throw)
         (interpret-outer-acc (rest-of-tree syntax-tree) (M_statement (curr-statement syntax-tree) state return break continue throw) return break continue throw))))
@@ -238,8 +238,8 @@
 
 (define make-class-closure
   (lambda (class)
-    ; a list of: (superclass) (methods) (static-methods) (fields) (static-methods)
-    (list (cadr (caddr class)) (get-class-methods (get-class-body class)) (get-class-static-methods (get-class-body class)) (get-class-instance-fields (get-class-body class)) (get-class-static-fields (get-class-body class)))))
+    ; a list of: superclass (methods) (static-methods) (fields) (static-fields)
+    (list (super-class-name (super-class-list class)) (get-class-methods (get-class-body class)) (get-class-static-methods (get-class-body class)) (get-class-instance-fields (get-class-body class)) (get-class-static-fields (get-class-body class)))))
 
 (define get-class-body
   (lambda (class)
