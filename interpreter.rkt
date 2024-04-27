@@ -10,25 +10,11 @@
     (interpret-outer-acc (parser filename) classname (new-state))))
 
 (define get-static-methods caddr)
-
-(define func-name cadar)
-
-(define get-main-method ; Abstract later
-  (lambda (closure)
-    (if (null? (caddr closure))
-         (error "No static methods in class.") ; Add classname to error message
-         (get-main-method-acc (caddr closure)))))
-
-(define get-main-method-acc ; Abstract later
-  (lambda (static-methods)
-    (cond
-      [(null? static-methods)                         (error "No Main Method found.")] ; Add classname to error message
-      [(eq? (func-name static-methods) 'main)         (car static-methods)]
-      [else                                           (get-main-method-acc (cdr static-methods))])))
        
 (define interpret-outer-acc
   (lambda (syntax-tree classname state)
     (if (null? syntax-tree)
+        ;(getBinding (get-static-methods (getBinding state classname)) 'main)
         ;(M_func_value (getBinding (get-static-methods (getBinding state classname)) 'main) (list) state returnError breakError continueError throwError)
         state
         (interpret-outer-acc (rest-of-tree syntax-tree) classname (M_statement (curr-statement syntax-tree) state returnError breakError continueError throwError)))))
@@ -287,7 +273,7 @@
 (define get-class-static-methods
   (lambda (class-body state)
     (cond
-      [(null? class-body) '()]
+      [(null? class-body) state]
       [(eq? (caar class-body) 'static-function) (get-class-static-methods (cdr class-body) (M_function (car class-body) state))]
       [else                               (get-class-static-methods (cdr class-body) state)])))
 
