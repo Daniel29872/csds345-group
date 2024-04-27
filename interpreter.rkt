@@ -9,13 +9,16 @@
   (lambda (filename classname)
     (interpret-outer-acc (parser filename) classname (new-state))))
 
+(define get-static-methods caddr)
+
 (define interpret-outer-acc
   (lambda (syntax-tree classname state)
     (if (null? syntax-tree)
-        (M_func_value (getBinding state 'main) (list) state return break continue throw)
-        (interpret-outer-acc (rest-of-tree syntax-tree) (M_statement (curr-statement syntax-tree) state return break continue throw) return break continue throw))))
+        ;(M_func_value (getBinding (get-static-methods (getBinding state classname)) 'main) (list) state returnError breakError continueError throwError)
+        state
+        (interpret-outer-acc (rest-of-tree syntax-tree) classname (M_statement (curr-statement syntax-tree) state returnError breakError continueError throwError)))))
 
-; Interprets the statemnets in function. Each statement will return a state that will be used to evalute
+; Interprets the statements in function. Each statement will return a state that will be used to evalute
 ; the next statement. When return is called in the program, then then return continuation is called,
 ; moving out of the function. 
 (define interpret-inner
@@ -198,7 +201,14 @@
       [(eq? (operator statement) 'try)      (M_try_catch_finally statement state return break continue throw)]
       [(eq? (operator statement) 'continue) (continue state)]
       [(eq? (operator statement) 'break)    (break state)]
-      [(eq? (operator statement) 'throw)    (throw (M_value (throw-value statement) state throw) state)])))
+      [(eq? (operator statement) 'throw)    (throw (M_value (throw-value statement) state throw) state)]
+      [(eq? (operator statement) 'class)    (M_class statement state)])))
+
+(define get-class-name cadr)
+
+(define M_class
+  (lambda (statement state)
+    (addBinding state (get-class-name statement) (make-class-closure statement))))
 
 ; Takes in a function definition and creates a closure of the function to be added to the state.
 (define M_function
@@ -228,7 +238,7 @@
     (list formalparams body (lambda (s) (restore-scope s funcname)))))
 
 (define super-class-list caddr)
-(define super-class-name cadr)
+(define super-class-name cdr)
 
 (define get-super-class
   (lambda (super-class-lst)
@@ -239,7 +249,7 @@
 (define make-class-closure
   (lambda (class)
     ; a list of: superclass (methods) (static-methods) (fields) (static-fields)
-    (list (super-class-name (super-class-list class)) (get-class-methods (get-class-body class)) (get-class-static-methods (get-class-body class)) (get-class-instance-fields (get-class-body class)) (get-class-static-fields (get-class-body class)))))
+    (list (get-super-class (super-class-list class)) (get-class-methods (get-class-body class)) (get-class-static-methods (get-class-body class)) (get-class-instance-fields (get-class-body class)) (get-class-static-fields (get-class-body class)))))
 
 (define get-class-body
   (lambda (class)
@@ -256,15 +266,15 @@
   (lambda (class-body)
     (cond
       [(null? class-body) '()]
-      [(eq? (caar class-body) 'static-var) (cons (car class-body) (get-class-static-methods (cdr class-body)))]
-      [else                               (get-class-static-methods (cdr class-body))])))
+      [(eq? (caar class-body) 'static-var) (cons (car class-body) (get-class-static-fields (cdr class-body)))]
+      [else                               (get-class-static-fields (cdr class-body))])))
 
 (define get-class-static-methods
   (lambda (class-body)
     (cond
       [(null? class-body) '()]
-      [(eq? (caar class-body) 'static-function) (cons (car class-body) (get-class-static-fields (cdr class-body)))]
-      [else                               (get-class-static-fields (cdr class-body))])))
+      [(eq? (caar class-body) 'static-function) (cons (car class-body) (get-class-static-methods (cdr class-body)))]
+      [else                               (get-class-static-methods (cdr class-body))])))
 
 (define get-class-instance-fields
   (lambda (class-body)
