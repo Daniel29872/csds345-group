@@ -264,18 +264,18 @@
 (define make-class-closure
   (lambda (class)
     ; a list of: superclass (methods) (static-methods) (fields) (static-fields)
-    (list (get-super-class (super-class-list class)) (get-class-methods (get-class-body class)) (get-class-static-methods (get-class-body class)) (get-class-instance-fields (get-class-body class)) (get-class-static-fields (get-class-body class)))))
+    (list (get-super-class (super-class-list class)) (get-class-methods (get-class-body class) (new-state)) (get-class-static-methods (get-class-body class) (new-state)) (get-class-instance-fields (get-class-body class)) (get-class-static-fields (get-class-body class)))))
 
 (define get-class-body
   (lambda (class)
     (cadddr class)))
 
 (define get-class-methods
-  (lambda (class-body)
+  (lambda (class-body state)
     (cond
-      [(null? class-body) '()]
-      [(eq? (caar class-body) 'function) (cons (car class-body) (get-class-methods (cdr class-body)))]
-      [else                       (get-class-methods (cdr class-body))])))
+      [(null? class-body) state]
+      [(eq? (caar class-body) 'function) (get-class-methods (cdr class-body) (M_function (car class-body) state))]
+      [else                       (get-class-methods (cdr class-body) state)])))
 
 (define get-class-static-fields
   (lambda (class-body)
@@ -285,11 +285,11 @@
       [else                               (get-class-static-fields (cdr class-body))])))
 
 (define get-class-static-methods
-  (lambda (class-body)
+  (lambda (class-body state)
     (cond
       [(null? class-body) '()]
-      [(eq? (caar class-body) 'static-function) (cons (car class-body) (get-class-static-methods (cdr class-body)))]
-      [else                               (get-class-static-methods (cdr class-body))])))
+      [(eq? (caar class-body) 'static-function) (get-class-static-methods (cdr class-body) (M_function (car class-body) state))]
+      [else                               (get-class-static-methods (cdr class-body) state)])))
 
 (define get-class-instance-fields
   (lambda (class-body)
