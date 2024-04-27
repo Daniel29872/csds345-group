@@ -256,22 +256,22 @@
   (lambda (class-body)
     (cond
       [(null? class-body) '()]
-      [(eq? (caar class-body) 'static-var) (cons (car class-body) (get-class-static-methods (cdr class-body)))]
-      [else                               (get-class-static-methods (cdr class-body))])))
+      [(eq? (caar class-body) 'static-var) (cons (car class-body) (get-class-static-fields (cdr class-body)))]
+      [else                               (get-class-static-fields (cdr class-body))])))
 
 (define get-class-static-methods
   (lambda (class-body)
     (cond
       [(null? class-body) '()]
-      [(eq? (caar class-body) 'static-function) (cons (car class-body) (get-class-static-fields (cdr class-body)))]
-      [else                               (get-class-static-fields (cdr class-body))])))
+      [(eq? (caar class-body) 'static-function) (cons (car class-body) (get-class-static-methods (cdr class-body)))]
+      [else                               (get-class-static-methods (cdr class-body))])))
 
 (define get-class-instance-fields
   (lambda (class-body)
     (cond
       [(null? class-body) '()]
       [(eq? (caar class-body) 'var) (cons (car class-body) (get-class-instance-fields (cdr class-body)))]
-      [else                         (get-class-static-fields (cdr class-body))])))
+      [else                         (get-class-instance-fields (cdr class-body))])))
 
 ; Processes a list of statements and returns the state after interpreting each statement.
 ; Begins by adding a new layer to the state before interpreting the first statement and removes the
