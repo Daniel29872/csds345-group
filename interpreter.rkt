@@ -281,7 +281,7 @@
     (cond
       [(null? class-body) '()]
       [(eq? (caar class-body) 'var) (cons (car class-body) (get-class-instance-fields (cdr class-body)))]
-      [else                         (get-class-static-fields (cdr class-body))])))
+      [else                         (get-class-instance-fields (cdr class-body))])))
 
 ; Processes a list of statements and returns the state after interpreting each statement.
 ; Begins by adding a new layer to the state before interpreting the first statement and removes the
