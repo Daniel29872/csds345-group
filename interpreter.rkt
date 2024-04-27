@@ -24,8 +24,8 @@
     (cond
       [(null? static-methods)                         (error "No Main Method found.")] ; Add classname to error message
       [(eq? (func-name static-methods) 'main)         (car static-methods)]
-      [else   
-
+      [else                                           (get-main-method-acc (cdr static-methods))])))
+       
 (define interpret-outer-acc
   (lambda (syntax-tree classname state)
     (if (null? syntax-tree)
