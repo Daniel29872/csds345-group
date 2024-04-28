@@ -171,7 +171,8 @@
       [(eq? (operator statement) '||)      (M_boolean statement state throw)]
       [(eq? (operator statement) '!)       (M_boolean statement state throw)]
       [(eq? (operator statement) 'funcall) (M_func_value (getBinding state (function-name statement)) (var-value-list statement) state
-                                                         (lambda (a) a) breakError continueError (lambda (e s) (throw e state)))] 
+                                                         (lambda (a) a) breakError continueError (lambda (e s) (throw e state)))]
+      [(eq? (operator statement) 'new)     (instance-closure (cadr statement) state)]
       [else                                (error "invalid operator")])))
 
 ; Interprets a function body and returns the value after going through the body of the function.
@@ -236,8 +237,8 @@
 (define fields-list cadr)
 
 (define instance-closure
-  (lambda (type)
-    (list type (fields-list (make-class-closure type)))))
+  (lambda (classname state)
+    (list classname (fields-list (getBinding state classname)))))
 
 ; Used when calling a function to reduce the state to the scope of which it was defined.
 (define restore-scope
