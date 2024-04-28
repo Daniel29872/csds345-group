@@ -110,7 +110,7 @@
 
 ; Handles the evaluation of a boolean expression.
 (define M_boolean
-  (lambda (exp state throw)
+  (lambda (exp state throw compileType runtimeType)
     (cond
       [(eq? exp 'true)                #t]
       [(eq? exp 'false)               #f]
@@ -132,7 +132,7 @@
 
 ; Handles the evaluation of an integer expression.
 (define M_integer
-  (lambda (exp state throw)
+  (lambda (exp state throw compileType runtimeType)
     (cond
       [(number? exp)                                                  exp]
       [(not (list? exp))
@@ -150,7 +150,7 @@
 
 ; Handles the evaluation of any general expression.
 (define M_value
-  (lambda (statement state throw)
+  (lambda (statement state throw compileType runtimeType)
     (cond
       [(number? statement)                 statement]
       [(eq? statement 'true)               #t]
@@ -176,7 +176,7 @@
 
 ; Interprets a function body and returns the value after going through the body of the function.
 (define M_func_value
-  (lambda (closure argList state return break continue throw)
+  (lambda (closure argList state return break continue throw compileType runtimeType)
     (interpret-inner
      (closure_body closure)
      (bindParameters (closure_formal_params closure) argList (add-layer ((closure_func closure) state)) state)
@@ -184,7 +184,7 @@
 
 ; Interprets a function body, but returns the state after going through the body of the function.
 (define M_func_state
-  (lambda (closure argList state return break continue throw)
+  (lambda (closure argList state return break continue throw compileType runtimeType)
     (begin
       (interpret-inner
        (closure_body closure)
@@ -201,7 +201,7 @@
 
 ; Evaluate a statement, and modify the state accordingly
 (define M_statement
-  (lambda (statement state return break continue throw)
+  (lambda (statement state return break continue throw compileType runtimeType)
     (cond
       [(eq? (operator statement) 'var)      (M_declare statement state throw)]
       [(eq? (operator statement) 'function) (M_function statement state)]
