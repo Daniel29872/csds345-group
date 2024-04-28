@@ -10,14 +10,17 @@
     (interpret-outer-acc (parser filename) classname (new-state))))
 
 (define get-static-methods caddr)
-       
+
+; Adds class closures for all classses in given file to the state
 (define interpret-outer-acc
   (lambda (syntax-tree classname state)
     (if (null? syntax-tree)
-        ;(getBinding (get-static-methods (getBinding state classname)) 'main)
-        ;(M_func_value (getBinding (get-static-methods (getBinding state classname)) 'main) (list) state returnError breakError continueError throwError)
-        state
+        (interpret-main (get-classname-main-body state classname) state) ; Just get the body of the main function
         (interpret-outer-acc (rest-of-tree syntax-tree) classname (M_statement (curr-statement syntax-tree) state returnError breakError continueError throwError)))))
+
+(define interpret-main
+  (lambda (main-body state)
+    (interpret-inner main-body state returnError breakError continueError throwError)))
 
 ; Interprets the statements in function. Each statement will return a state that will be used to evalute
 ; the next statement. When return is called in the program, then then return continuation is called,
@@ -31,6 +34,16 @@
     (if (null? syntax-tree)
         (return "error")
         (interpret-inner-acc (rest-of-tree syntax-tree) (M_statement (curr-statement syntax-tree) state return break continue throw) return break continue throw))))
+
+#| ---------PART _ ADDITIONS--------- |#
+
+(define get-classname-main-body
+  (lambda (state classname)
+    (cadr (getBinding (list-of-class-static-methods (getBinding state classname)) 'main))))
+
+(define list-of-class-static-methods caddr)
+
+#|------------------------------------|#
 
 ; Return, break, continue, and throw continuations to be passed at the start. Will throw errors when called
 ; outside of the appropriate locations such as a while loop body or the try-body of a try-catch-finally
