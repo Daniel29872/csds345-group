@@ -484,7 +484,8 @@
 ; Used with getBinding to get a method closure from a class closure stored in the state.
 (define get-method-from-class
   (lambda (func classname closure)
-    (get-method-from-class-acc func classname (append (get-methods closure) (get-static-methods closure)))))
+    (getBinding (cadr closure) func)))
+    ;(get-method-from-class-acc func classname (cadr closure)))) ;<-- does not return the instance methods if support wanted.
 
 (define get-method-from-class-acc
   (lambda (func classname methods)
