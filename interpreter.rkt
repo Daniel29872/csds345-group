@@ -287,7 +287,7 @@
      (get-super-class (super-class-list class))
      (get-class-methods (class-name class) (get-class-body class) (new-state))
      (get-class-static-methods (class-name class) (get-class-body class) (new-state))
-     (get-class-instance-fields (get-class-body class))
+     (get-class-instance-fields (get-class-body class) (new-state))
      (get-class-static-fields (get-class-body class)))))
 
 (define get-class-body
@@ -316,11 +316,11 @@
       [else                               (get-class-static-methods class-name (cdr class-body) state)])))
 
 (define get-class-instance-fields
-  (lambda (class-body)
+  (lambda (class-body state)
     (cond
-      [(null? class-body) '()]
-      [(eq? (caar class-body) 'var) (cons (car class-body) (get-class-instance-fields (cdr class-body)))]
-      [else                         (get-class-instance-fields (cdr class-body))])))
+      [(null? class-body)           state]
+      [(eq? (caar class-body) 'var) (get-class-instance-fields (cdr class-body) (addBinding state (cadar class-body) (caddar class-body)))]
+      [else                         (get-class-instance-fields (cdr class-body) state)])))
 
 ; Processes a list of statements and returns the state after interpreting each statement.
 ; Begins by adding a new layer to the state before interpreting the first statement and removes the
