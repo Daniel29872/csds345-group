@@ -225,9 +225,9 @@
 
 (define M_class
   (lambda (statement state compileType runtimeType)
-    (if? (and (null? compileType) (null? runtimeType)) ; Do not allow class creation within another class
+    (if (and (eq? compileType no-type) (eq? runtimeType no-type)) ; Do not allow class creation within another class
          (addBinding state (get-class-name statement) (make-class-closure statement))
-         (error "Nested classes are not permitted.")))
+         (error "Nested classes are not permitted."))))
 
 ; Takes in a function definition and creates a closure of the function to be added to the state.
 (define M_function
