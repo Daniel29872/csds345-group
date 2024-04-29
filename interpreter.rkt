@@ -17,8 +17,8 @@
 (define interpret-outer-acc
   (lambda (syntax-tree classname state)
     (if (null? syntax-tree)
-        (interpret-main (get-classname-main-body state classname) state classname classname) ; Just get the body of the main function
-        ;state
+        ;(interpret-main (get-classname-main-body state classname) state classname classname) ; Just get the body of the main function
+        state
         (interpret-outer-acc (rest-of-tree syntax-tree) classname (M_statement (curr-statement syntax-tree) state returnError breakError continueError throwError no-type no-type)))))
 
 (define interpret-main
@@ -264,9 +264,19 @@
 
 ; --------------------- STATEMENT STATE FUNCTIONS ---------------------
 
+(define unbox-and-copy
+  (lambda (list)
+    (if (null? list)
+        '()
+        (cons (box (unbox (first-element list))) (unbox-and-copy (rest-of-list list))))))
+
+(define deep-copy
+  (lambda (state)
+    (cons (unbox-and-copy (vars-list state)) (list (unbox-and-copy (vals-list state))))))
+
 (define fields-list
   (lambda (closure)
-    (car (cadddr closure))))
+    (deep-copy (car (cadddr closure)))))
 
 (define classname-from-closure car)
 
