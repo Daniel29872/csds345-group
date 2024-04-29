@@ -17,8 +17,8 @@
 (define interpret-outer-acc
   (lambda (syntax-tree classname state)
     (if (null? syntax-tree)
-        ;(interpret-main (get-classname-main-body state classname) state classname classname) ; Just get the body of the main function
-        state
+        (interpret-main (get-classname-main-body state classname) state classname classname) ; Just get the body of the main function
+        ;state
         (interpret-outer-acc (rest-of-tree syntax-tree) classname (M_statement (curr-statement syntax-tree) state returnError breakError continueError throwError no-type no-type)))))
 
 (define interpret-main
@@ -210,7 +210,7 @@
     (cond
       [(eq? (operator statement) 'var)      (M_declare statement state throw compileType runtimeType)]
       [(eq? (operator statement) 'function) (M_function statement state compileType runtimeType)]
-      [(eq? (operator statement) 'funcall)  (M_func_state (M_dot (function-name statement) state compileType runtimeType) (var-value-list statement) state
+      [(eq? (operator statement) 'funcall)  (M_func_state (M_dot (function-name statement) state compileType runtimeType) (cons compileType (var-value-list statement)) state
                                                           return break continue throw compileType runtimeType)]
       [(eq? (operator statement) '=)        (M_assignment statement state throw compileType runtimeType)]
       [(eq? (operator statement) 'return)   (M_return statement state return throw compileType runtimeType)]
@@ -223,12 +223,16 @@
       [(eq? (operator statement) 'throw)    (throw (M_value (throw-value statement) state throw compileType runtimeType) state)]
       [(eq? (operator statement) 'class)    (M_class statement state compileType runtimeType)])))
 
+(define instance-class car)
 (define get-class-name cadr)
 
 ; returns the closure of the method from using either the runtime type or the compile time type
 (define M_dot
   (lambda (statement state compileType runtimeType)
-    (getBinding (cadr (getBinding state (car (getBinding state (cadr statement))))) (caddr statement))))
+    (get-method-from-class
+     (rightoperand statement)
+     (instance-class (getBinding state (leftoperand statement)))
+     (getBinding state (instance-class (getBinding state (leftoperand statement)))))))
 
 ; Create a binding for a class definition
 (define M_class
