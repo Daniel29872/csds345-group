@@ -172,7 +172,7 @@
       [(eq? (operator statement) '&&)      (M_boolean statement state throw compileType runtimeType)]
       [(eq? (operator statement) '||)      (M_boolean statement state throw compileType runtimeType)]
       [(eq? (operator statement) '!)       (M_boolean statement state throw compileType runtimeType)]
-      [(eq? (operator statement) 'funcall) (M_func_value (getBinding state (function-name statement)) (var-value-list statement) state
+      [(eq? (operator statement) 'funcall) (M_func_value (M_dot (function-name statement) state compileType runtimeType) (var-value-list statement) state
                                                          (lambda (a) a) breakError continueError (lambda (e s) (throw e state)) compileType runtimeType)]
       [(eq? (operator statement) 'new)     (instance-closure (cadr statement) state)]
       [else                                (error "invalid operator")])))
@@ -208,7 +208,7 @@
     (cond
       [(eq? (operator statement) 'var)      (M_declare statement state throw compileType runtimeType)]
       [(eq? (operator statement) 'function) (M_function statement state compileType runtimeType)]
-      [(eq? (operator statement) 'funcall)  (M_func_state (getBinding state (function-name statement)) (var-value-list statement) state
+      [(eq? (operator statement) 'funcall)  (M_func_state (M_dot (function-name statement) state compileType runtimeType) (var-value-list statement) state
                                                           return break continue throw compileType runtimeType)]
       [(eq? (operator statement) '=)        (M_assignment statement state throw compileType runtimeType)]
       [(eq? (operator statement) 'return)   (M_return statement state return throw compileType runtimeType)]
@@ -223,9 +223,10 @@
 
 (define get-class-name cadr)
 
+; returns the closure of the method from using either the runtime type or the compile time type
 (define M_dot
   (lambda (statement state compileType runtimeType)
-    (M_func_value (getBinding (cadr (getBinding state (car (getBinding state (cadr statement))))) (caddr statement)))))
+    (getBinding (cadr (getBinding state (car (getBinding state (cadr statement))))) (caddr statement))))
 
 (define M_class
   (lambda (statement state compileType runtimeType)
