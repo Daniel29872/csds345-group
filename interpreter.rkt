@@ -16,8 +16,8 @@
 (define interpret-outer-acc
   (lambda (syntax-tree classname state)
     (if (null? syntax-tree)
-        (interpret-main (get-classname-main-body state classname) state classname classname) ; Just get the body of the main function
-        ;state
+        ;(interpret-main (get-classname-main-body state classname) state classname classname) ; Just get the body of the main function
+        state
         (interpret-outer-acc (rest-of-tree syntax-tree) classname (M_statement (curr-statement syntax-tree) state returnError breakError continueError throwError no-type no-type)))))
 
 (define interpret-main
@@ -229,8 +229,8 @@
 
 ; Takes in a function definition and creates a closure of the function to be added to the state.
 (define M_function
-  (lambda (class-name statement state)
-    (addBinding state (function-name statement) (make-closure class-name (function-name statement) (formal-params statement) (function-body statement) state))))
+  (lambda (static class-name statement state)
+    (addBinding state (function-name statement) (make-closure static class-name (function-name statement) (formal-params statement) (function-body statement) state))))
 
 
 
@@ -251,8 +251,10 @@
 
 ; Generates the function closure using the given function name, parameters, body, and the state.
 (define make-closure
-  (lambda (classname funcname formalparams body state)
-    (list formalparams body (lambda (s) (restore-scope s funcname)) classname)))
+  (lambda (static classname funcname formalparams body state)
+    (if (eq? static 'static)
+        (list formalparams body (lambda (s) (restore-scope s funcname)) classname)
+        (list (cons 'this formalparams) body (lambda (s) (restore-scope s funcname)) classname))))
 
 (define super-class-list caddr)
 (define super-class-name cdr)
@@ -277,7 +279,7 @@
   (lambda (class-name class-body state)
     (cond
       [(null? class-body) state]
-      [(eq? (caar class-body) 'function) (get-class-methods class-name (cdr class-body) (M_function class-name (car class-body) state))]
+      [(eq? (caar class-body) 'function) (get-class-methods class-name (cdr class-body) (M_function 'not-static class-name (car class-body) state))]
       [else                       (get-class-methods class-name (cdr class-body) state)])))
 
 (define get-class-static-fields
@@ -291,7 +293,7 @@
   (lambda (class-name class-body state)
     (cond
       [(null? class-body) state]
-      [(eq? (caar class-body) 'static-function) (get-class-static-methods class-name (cdr class-body) (M_function class-name (car class-body) state))]
+      [(eq? (caar class-body) 'static-function) (get-class-static-methods class-name (cdr class-body) (M_function 'static class-name (car class-body) state))]
       [else                               (get-class-static-methods class-name (cdr class-body) state)])))
 
 (define get-class-instance-fields
