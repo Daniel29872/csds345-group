@@ -207,25 +207,27 @@
   (lambda (statement state return break continue throw compileType runtimeType)
     (cond
       [(eq? (operator statement) 'var)      (M_declare statement state throw compileType runtimeType)]
-      [(eq? (operator statement) 'function) (M_function statement state)]
+      [(eq? (operator statement) 'function) (M_function statement state compileType runtimeType)]
       [(eq? (operator statement) 'funcall)  (M_func_state (getBinding state (function-name statement)) (var-value-list statement) state
                                                           return break continue throw compileType runtimeType)]
       [(eq? (operator statement) '=)        (M_assignment statement state throw compileType runtimeType)]
       [(eq? (operator statement) 'return)   (M_return statement state return throw compileType runtimeType)]
-      [(eq? (operator statement) 'if)       (M_if statement state return break continue throw)]
-      [(eq? (operator statement) 'while)    (M_while statement state return break continue throw)]
-      [(eq? (operator statement) 'begin)    (M_block (block-stmts statement) state return break continue throw)]
-      [(eq? (operator statement) 'try)      (M_try_catch_finally statement state return break continue throw)]
+      [(eq? (operator statement) 'if)       (M_if statement state return break continue throw compileType runtimeType)]
+      [(eq? (operator statement) 'while)    (M_while statement state return break continue throw compileType runtimeType)]
+      [(eq? (operator statement) 'begin)    (M_block (block-stmts statement) state return break continue throw compileType runtimeType)]
+      [(eq? (operator statement) 'try)      (M_try_catch_finally statement state return break continue throw compileType runtimeType)]
       [(eq? (operator statement) 'continue) (continue state)]
       [(eq? (operator statement) 'break)    (break state)]
-      [(eq? (operator statement) 'throw)    (throw (M_value (throw-value statement) state throw) state)]
+      [(eq? (operator statement) 'throw)    (throw (M_value (throw-value statement) state throw compileType runtimeType) state)]
       [(eq? (operator statement) 'class)    (M_class statement state compileType runtimeType)])))
 
 (define get-class-name cadr)
 
 (define M_class
   (lambda (statement state compileType runtimeType)
-    (addBinding state (get-class-name statement) (make-class-closure statement))))
+    (if (and (eq? compileType no-type) (eq? runtimeType no-type)) ; Do not allow class creation within another class
+         (addBinding state (get-class-name statement) (make-class-closure statement))
+         (error "Nested classes are not permitted."))))
 
 ; Takes in a function definition and creates a closure of the function to be added to the state.
 (define M_function
