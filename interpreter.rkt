@@ -10,14 +10,15 @@
     (interpret-outer-acc (parser filename) classname (new-state))))
 
 (define get-static-methods caddr)
+(define no-type 'NoType)
 
 ; Adds class closures for all classses in given file to the state
 (define interpret-outer-acc
   (lambda (syntax-tree classname state)
     (if (null? syntax-tree)
-        (interpret-main (get-classname-main-body state classname) state) ; Just get the body of the main function
+        (interpret-main (get-classname-main-body state classname) state classname classname) ; Just get the body of the main function
         ;state
-        (interpret-outer-acc (rest-of-tree syntax-tree) classname (M_statement (curr-statement syntax-tree) state returnError breakError continueError throwError)))))
+        (interpret-outer-acc (rest-of-tree syntax-tree) classname (M_statement (curr-statement syntax-tree) state returnError breakError continueError throwError no-type no-type)))))
 
 (define interpret-main
   (lambda (main-body state compileType runtimeType)
@@ -28,13 +29,13 @@
 ; moving out of the function. 
 (define interpret-inner
   (lambda (syntax-tree state return break continue throw compileType runtimeType)
-    (call/cc (lambda (newReturn) (interpret-inner-acc syntax-tree state newReturn break continue throw)))))
+    (call/cc (lambda (newReturn) (interpret-inner-acc syntax-tree state newReturn break continue throw compileType runtimeType)))))
 
 (define interpret-inner-acc
   (lambda (syntax-tree state return break continue throw compileType runtimeType)
     (if (null? syntax-tree)
         (return "error")
-        (interpret-inner-acc (rest-of-tree syntax-tree) (M_statement (curr-statement syntax-tree) state return break continue throw) return break continue throw))))
+        (interpret-inner-acc (rest-of-tree syntax-tree) (M_statement (curr-statement syntax-tree) state return break continue throw compileType runtimeType) return break continue throw compileType runtimeType))))
 
 #| ---------PART _ ADDITIONS--------- |#
 
@@ -205,12 +206,12 @@
 (define M_statement
   (lambda (statement state return break continue throw compileType runtimeType)
     (cond
-      [(eq? (operator statement) 'var)      (M_declare statement state throw)]
+      [(eq? (operator statement) 'var)      (M_declare statement state throw compileType runtimeType)]
       [(eq? (operator statement) 'function) (M_function statement state)]
       [(eq? (operator statement) 'funcall)  (M_func_state (getBinding state (function-name statement)) (var-value-list statement) state
                                                           return break continue throw compileType runtimeType)]
       [(eq? (operator statement) '=)        (M_assignment statement state throw compileType runtimeType)]
-      [(eq? (operator statement) 'return)   (M_return statement state return throw)]
+      [(eq? (operator statement) 'return)   (M_return statement state return throw compileType runtimeType)]
       [(eq? (operator statement) 'if)       (M_if statement state return break continue throw)]
       [(eq? (operator statement) 'while)    (M_while statement state return break continue throw)]
       [(eq? (operator statement) 'begin)    (M_block (block-stmts statement) state return break continue throw)]
@@ -224,9 +225,7 @@
 
 (define M_class
   (lambda (statement state compileType runtimeType)
-    (if? (and (null? compileType) (null? runtimeType))
-         (addBinding state (get-class-name statement) (make-class-closure statement))
-         (error "Nested classes are not permitted.")))
+    (addBinding state (get-class-name statement) (make-class-closure statement))))
 
 ; Takes in a function definition and creates a closure of the function to be added to the state.
 (define M_function
@@ -391,11 +390,11 @@
 
 ; Processes statement in the form (return val). Calls return continuation with val
 (define M_return
-  (lambda (statement state return throw)
+  (lambda (statement state return throw compileType runtimeType)
     (cond
-      [(eq? (M_value (var-name statement) state throw) #t) (return 'true)]
-      [(eq? (M_value (var-name statement) state throw) #f) (return 'false)]
-      [else                                                (return (M_value (var-name statement) state throw))])))
+      [(eq? (M_value (var-name statement) state throw compileType runtimeType) #t) (return 'true)]
+      [(eq? (M_value (var-name statement) state throw compileType runtimeType) #f) (return 'false)]
+      [else                                                (return (M_value (var-name statement) state throw compileType runtimeType))])))
     
 ; Processes statement in the form (= var val) and retuns an updated state.
 ; Updates binding of var with val in the state.
@@ -407,10 +406,10 @@
 ; (var x): Adds binding x to the state with initial value 'error.
 ; (var x val): Adds binding x to the state with initial value val.
 (define M_declare
-  (lambda (statement state throw)
+  (lambda (statement state throw compileType runtimeType)
     (if (null? (var-value-list statement))
         (addBinding state (var-name statement) 'error)
-        (addBinding state (var-name statement) (M_value (var-value statement) state throw)))))
+        (addBinding state (var-name statement) (M_value (var-value statement) state throw compileType runtimeType)))))
 
 
 
