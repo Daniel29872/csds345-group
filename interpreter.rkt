@@ -223,6 +223,10 @@
 
 (define get-class-name cadr)
 
+(define M_dot
+  (lambda (statement state compileType runtimeType)
+    (M_func_value (getBinding (cadr (getBinding state (car (getBinding state (cadr statement))))) (caddr statement)))))
+
 (define M_class
   (lambda (statement state compileType runtimeType)
     (if (and (eq? compileType no-type) (eq? runtimeType no-type)) ; Do not allow class creation within another class
