@@ -149,8 +149,20 @@
       [(eq? (operator exp) '/)                                        (quotient (M_integer (leftoperand exp) state throw compileType runtimeType) (M_integer (rightoperand exp) state throw compileType runtimeType))]
       [(eq? (operator exp) '%)                                        (remainder (M_integer (leftoperand exp) state throw compileType runtimeType) (M_integer (rightoperand exp) state throw compileType runtimeType))]
       [(eq? (operator exp) 'funcall)                                  (M_value exp state throw compileType runtimeType)]
-      [(eq? (operator exp) 'dot)                                      (M_dot exp state compileType runtimeType)]
+      [(eq? (operator exp) 'dot)                                      (get-val-from-instance-fields-of-runtime-type (caddr exp) (getBinding state compileType) runtimeType)]; create a dot function to should determine if need to use the compileType or the runtimeType
       [else                                                           (error "Not an Integer: " exp)])))
+
+(define get-val-from-instance-fields-of-runtime-type
+  (lambda (var class-closure runtimeType)
+    (find-me var (cadddr class-closure)))) ;<------
+
+(define find-me
+  (lambda (var lis)
+    (cond
+      [(null? lis) (error "not here" var)]
+      [(eq? (cadar lis) var) (car (cddar lis))]
+      [else (find-me var (cdr lis))])))
+        
 
 ; Handles the evaluation of any general expression.
 (define M_value
