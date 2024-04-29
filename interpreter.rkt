@@ -83,8 +83,6 @@
   (lambda ()
     (list (list) (list))))
 
-
-
 ; --------------------- BINDING FUNCTIONS ---------------------
 
 (define addBinding
@@ -261,7 +259,10 @@
 
 ; --------------------- STATEMENT STATE FUNCTIONS ---------------------
 
-(define fields-list cadr)
+(define fields-list
+  (lambda (closure)
+    (car (cadddr closure))))
+
 (define classname-from-closure car)
 
 (define instance-closure
