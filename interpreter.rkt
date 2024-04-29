@@ -149,6 +149,7 @@
       [(eq? (operator exp) '/)                                        (quotient (M_integer (leftoperand exp) state throw compileType runtimeType) (M_integer (rightoperand exp) state throw compileType runtimeType))]
       [(eq? (operator exp) '%)                                        (remainder (M_integer (leftoperand exp) state throw compileType runtimeType) (M_integer (rightoperand exp) state throw compileType runtimeType))]
       [(eq? (operator exp) 'funcall)                                  (M_value exp state throw compileType runtimeType)]
+      [(eq? (operator exp) 'dot)                                      (M_dot exp state compileType runtimeType)]
       [else                                                           (error "Not an Integer: " exp)])))
 
 ; Handles the evaluation of any general expression.
@@ -173,7 +174,7 @@
       [(eq? (operator statement) '&&)      (M_boolean statement state throw compileType runtimeType)]
       [(eq? (operator statement) '||)      (M_boolean statement state throw compileType runtimeType)]
       [(eq? (operator statement) '!)       (M_boolean statement state throw compileType runtimeType)]
-      [(eq? (operator statement) 'funcall) (M_func_value (M_dot (function-name statement) state compileType runtimeType) (var-value-list statement) state
+      [(eq? (operator statement) 'funcall) (M_func_value (M_dot (function-name statement) state compileType runtimeType) (cons compileType (var-value-list statement)) state
                                                          (lambda (a) a) breakError continueError (lambda (e s) (throw e state)) compileType runtimeType)]
       [(eq? (operator statement) 'new)     (instance-closure (cadr statement) state)]
       [else                                (error "invalid operator")])))
@@ -183,8 +184,8 @@
   (lambda (closure argList state return break continue throw compileType runtimeType)
     (interpret-inner
      (closure_body closure)
-     (bindParameters (closure_formal_params closure) argList (add-layer ((closure_func closure) state)) state)
-     return break continue throw)))
+     (bindParameters (closure_formal_params closure) argList (add-layer ((closure_func closure) state)) state compileType runtimeType)
+     return break continue throw compileType runtimeType)))
 
 ; Interprets a function body, but returns the state after going through the body of the function.
 (define M_func_state
@@ -192,16 +193,16 @@
     (begin
       (interpret-inner
        (closure_body closure)
-       (bindParameters (closure_formal_params closure) argList (add-layer ((closure_func closure) state)) state)
+       (bindParameters (closure_formal_params closure) argList (add-layer ((closure_func closure) state)) state compileType runtimeType)
        return break continue throw compileType runtimeType)
      state)))
 
 ; Bind each passed parameter with its variable name in the state
 (define bindParameters
-  (lambda (params args fstate state)
+  (lambda (params args fstate state compileType runtimeType)
     (if (or (null? params) (null? args))
         (bothListsEmpty params args fstate)
-        (bindParameters (cdr params) (cdr args) (addBinding fstate (car params) (M_value (car args) state throwError)) state))))
+        (bindParameters (cdr params) (cdr args) (addBinding fstate (car params) (M_value (car args) state throwError compileType runtimeType)) state compileType runtimeType))))
 
 ; Evaluate a statement, and modify the state accordingly
 (define M_statement
@@ -253,9 +254,10 @@
 ; Used when calling a function to reduce the state to the scope of which it was defined.
 (define restore-scope
   (lambda (state func-name)
-    (if (var-in-layer-vars? (top-layer-vars state) func-name)
-        state
-        (restore-scope (rest-of-state state) func-name))))
+    state))
+    ;(if (var-in-layer-vars? (top-layer-vars state) func-name)
+    ;    state
+    ;    (restore-scope (rest-of-state state) func-name))))
 
 ; Generates the function closure using the given function name, parameters, body, and the state.
 (define make-closure
