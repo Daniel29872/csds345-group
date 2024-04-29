@@ -120,16 +120,16 @@
             (if (boolean? (getBinding state exp))
                 (getBinding state exp)
                 (error "type error"))]
-      [(eq? (operator exp) '==)       (eq? (M_integer (leftoperand exp) state throw) (M_integer (rightoperand exp) state throw))]
-      [(eq? (operator exp) '!=)       (not (eq? (M_integer (leftoperand exp) state throw) (M_integer (rightoperand exp) state throw)))]
-      [(eq? (operator exp) '<)        (<   (M_integer (leftoperand exp) state throw) (M_integer (rightoperand exp) state throw))]
-      [(eq? (operator exp) '>)        (>   (M_integer (leftoperand exp) state throw) (M_integer (rightoperand exp) state throw))]
-      [(eq? (operator exp) '<=)       (<=  (M_integer (leftoperand exp) state throw) (M_integer (rightoperand exp) state throw))]
-      [(eq? (operator exp) '>=)       (>=  (M_integer (leftoperand exp) state throw) (M_integer (rightoperand exp) state throw))]
-      [(eq? (operator exp) '&&)       (and (M_boolean (leftoperand exp) state throw) (M_boolean (rightoperand exp) state throw))]
-      [(eq? (operator exp) '||)       (or  (M_boolean (leftoperand exp) state throw) (M_boolean (rightoperand exp) state throw))]
-      [(eq? (operator exp) '!)        (not (M_boolean (leftoperand exp) state throw))]
-      [(eq? (operator exp) 'funcall)  (M_value exp state throw)]
+      [(eq? (operator exp) '==)       (eq? (M_integer (leftoperand exp) state throw compileType runtimeType) (M_integer (rightoperand exp) state throw compileType runtimeType))]
+      [(eq? (operator exp) '!=)       (not (eq? (M_integer (leftoperand exp) state throw compileType runtimeType) (M_integer (rightoperand exp) state throw compileType runtimeType)))]
+      [(eq? (operator exp) '<)        (<   (M_integer (leftoperand exp) state throw compileType runtimeType) (M_integer (rightoperand exp) state throw compileType runtimeType))]
+      [(eq? (operator exp) '>)        (>   (M_integer (leftoperand exp) state throw compileType runtimeType) (M_integer (rightoperand exp) state throw compileType runtimeType))]
+      [(eq? (operator exp) '<=)       (<=  (M_integer (leftoperand exp) state throw compileType runtimeType) (M_integer (rightoperand exp) state throw compileType runtimeType))]
+      [(eq? (operator exp) '>=)       (>=  (M_integer (leftoperand exp) state throw compileType runtimeType) (M_integer (rightoperand exp) state throw compileType runtimeType))]
+      [(eq? (operator exp) '&&)       (and (M_boolean (leftoperand exp) state throw compileType runtimeType) (M_boolean (rightoperand exp) state throw compileType runtimeType))]
+      [(eq? (operator exp) '||)       (or  (M_boolean (leftoperand exp) state throw compileType runtimeType) (M_boolean (rightoperand exp) state throw compileType runtimeType))]
+      [(eq? (operator exp) '!)        (not (M_boolean (leftoperand exp) state throw compileType runtimeType))]
+      [(eq? (operator exp) 'funcall)  (M_value exp state throw compileType runtimeType)]
       [else                           (error "Not a Boolean")])))
 
 ; Handles the evaluation of an integer expression.
@@ -142,12 +142,12 @@
                 (getBinding state exp)
                 (error "type error"))]
       [(and (eq? (operator exp) '-) (null? (rightoperand-list exp)))  (- 0 (M_integer (leftoperand exp) state throw))]
-      [(eq? (operator exp) '+)                                        (+ (M_integer (leftoperand exp) state throw) (M_integer (rightoperand exp) state throw))]
-      [(eq? (operator exp) '-)                                        (- (M_integer (leftoperand exp) state throw) (M_integer (rightoperand exp) state throw))]
-      [(eq? (operator exp) '*)                                        (* (M_integer (leftoperand exp) state throw) (M_integer (rightoperand exp) state throw))]
-      [(eq? (operator exp) '/)                                        (quotient (M_integer (leftoperand exp) state throw) (M_integer (rightoperand exp) state throw))]
-      [(eq? (operator exp) '%)                                        (remainder (M_integer (leftoperand exp) state throw) (M_integer (rightoperand exp) state throw))]
-      [(eq? (operator exp) 'funcall)                                  (M_value exp state throw)]
+      [(eq? (operator exp) '+)                                        (+ (M_integer (leftoperand exp) state throw compileType runtimeType) (M_integer (rightoperand exp) state throw compileType runtimeType))]
+      [(eq? (operator exp) '-)                                        (- (M_integer (leftoperand exp) state throw compileType runtimeType) (M_integer (rightoperand exp) state throw compileType runtimeType))]
+      [(eq? (operator exp) '*)                                        (* (M_integer (leftoperand exp) state throw compileType runtimeType) (M_integer (rightoperand exp) state throw compileType runtimeType))]
+      [(eq? (operator exp) '/)                                        (quotient (M_integer (leftoperand exp) state throw compileType runtimeType) (M_integer (rightoperand exp) state throw compileType runtimeType))]
+      [(eq? (operator exp) '%)                                        (remainder (M_integer (leftoperand exp) state throw compileType runtimeType) (M_integer (rightoperand exp) state throw compileType runtimeType))]
+      [(eq? (operator exp) 'funcall)                                  (M_value exp state throw compileType runtimeType)]
       [else                                                           (error "Not an Integer: " exp)])))
 
 ; Handles the evaluation of any general expression.
@@ -158,22 +158,22 @@
       [(eq? statement 'true)               #t]
       [(eq? statement 'false)              #f]
       [(not (list? statement))             (getBinding state statement)]
-      [(eq? (operator statement) '+)       (M_integer statement state throw)]
-      [(eq? (operator statement) '-)       (M_integer statement state throw)]
-      [(eq? (operator statement) '*)       (M_integer statement state throw)]
-      [(eq? (operator statement) '/)       (M_integer statement state throw)]
-      [(eq? (operator statement) '%)       (M_integer statement state throw)]
-      [(eq? (operator statement) '==)      (M_boolean statement state throw)]
-      [(eq? (operator statement) '!=)      (M_boolean statement state throw)]
-      [(eq? (operator statement) '<)       (M_boolean statement state throw)]
-      [(eq? (operator statement) '>)       (M_boolean statement state throw)]
-      [(eq? (operator statement) '<=)      (M_boolean statement state throw)]
-      [(eq? (operator statement) '>=)      (M_boolean statement state throw)]
-      [(eq? (operator statement) '&&)      (M_boolean statement state throw)]
-      [(eq? (operator statement) '||)      (M_boolean statement state throw)]
-      [(eq? (operator statement) '!)       (M_boolean statement state throw)]
+      [(eq? (operator statement) '+)       (M_integer statement state throw compileType runtimeType)]
+      [(eq? (operator statement) '-)       (M_integer statement state throw compileType runtimeType)]
+      [(eq? (operator statement) '*)       (M_integer statement state throw compileType runtimeType)]
+      [(eq? (operator statement) '/)       (M_integer statement state throw compileType runtimeType)]
+      [(eq? (operator statement) '%)       (M_integer statement state throw compileType runtimeType)]
+      [(eq? (operator statement) '==)      (M_boolean statement state throw compileType runtimeType)]
+      [(eq? (operator statement) '!=)      (M_boolean statement state throw compileType runtimeType)]
+      [(eq? (operator statement) '<)       (M_boolean statement state throw compileType runtimeType)]
+      [(eq? (operator statement) '>)       (M_boolean statement state throw compileType runtimeType)]
+      [(eq? (operator statement) '<=)      (M_boolean statement state throw compileType runtimeType)]
+      [(eq? (operator statement) '>=)      (M_boolean statement state throw compileType runtimeType)]
+      [(eq? (operator statement) '&&)      (M_boolean statement state throw compileType runtimeType)]
+      [(eq? (operator statement) '||)      (M_boolean statement state throw compileType runtimeType)]
+      [(eq? (operator statement) '!)       (M_boolean statement state throw compileType runtimeType)]
       [(eq? (operator statement) 'funcall) (M_func_value (getBinding state (function-name statement)) (var-value-list statement) state
-                                                         (lambda (a) a) breakError continueError (lambda (e s) (throw e state)))]
+                                                         (lambda (a) a) breakError continueError (lambda (e s) (throw e state)) compileType runtimeType)]
       [(eq? (operator statement) 'new)     (instance-closure (cadr statement) state)]
       [else                                (error "invalid operator")])))
 
@@ -231,7 +231,7 @@
 
 ; Takes in a function definition and creates a closure of the function to be added to the state.
 (define M_function
-  (lambda (class-name statement state)
+  (lambda (class-name statement state compileType runtimeType)
     (addBinding state (function-name statement) (make-closure class-name (function-name statement) (formal-params statement) (function-body statement) state))))
 
 
@@ -269,7 +269,12 @@
 (define make-class-closure
   (lambda (class)
     ; a list of: superclass (methods) (static-methods) (fields) (static-fields)
-    (list (get-super-class (super-class-list class)) (get-class-methods (class-name class) (get-class-body class) (new-state)) (get-class-static-methods (class-name class) (get-class-body class) (new-state)) (get-class-instance-fields (get-class-body class)) (get-class-static-fields (get-class-body class)))))
+    (list
+     (get-super-class (super-class-list class))
+     (get-class-methods (class-name class) (get-class-body class) (new-state))
+     (get-class-static-methods (class-name class) (get-class-body class) (new-state))
+     (get-class-instance-fields (get-class-body class))
+     (get-class-static-fields (get-class-body class)))))
 
 (define get-class-body
   (lambda (class)
@@ -279,7 +284,7 @@
   (lambda (class-name class-body state)
     (cond
       [(null? class-body) state]
-      [(eq? (caar class-body) 'function) (get-class-methods class-name (cdr class-body) (M_function class-name (car class-body) state))]
+      [(eq? (caar class-body) 'function) (get-class-methods class-name (cdr class-body) (M_function class-name (car class-body) state no-type no-type))]
       [else                       (get-class-methods class-name (cdr class-body) state)])))
 
 (define get-class-static-fields
@@ -293,7 +298,7 @@
   (lambda (class-name class-body state)
     (cond
       [(null? class-body) state]
-      [(eq? (caar class-body) 'static-function) (get-class-static-methods class-name (cdr class-body) (M_function class-name (car class-body) state))]
+      [(eq? (caar class-body) 'static-function) (get-class-static-methods class-name (cdr class-body) (M_function class-name (car class-body) state no-type no-type))]
       [else                               (get-class-static-methods class-name (cdr class-body) state)])))
 
 (define get-class-instance-fields
