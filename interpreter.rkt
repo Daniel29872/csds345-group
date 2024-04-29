@@ -186,7 +186,10 @@
       [(eq? (operator statement) '&&)      (M_boolean statement state throw compileType runtimeType)]
       [(eq? (operator statement) '||)      (M_boolean statement state throw compileType runtimeType)]
       [(eq? (operator statement) '!)       (M_boolean statement state throw compileType runtimeType)]
-      [(eq? (operator statement) 'funcall) (M_func_value (M_dot (function-name statement) state compileType runtimeType) (cons compileType (var-value-list statement)) state
+                                                 ;v---- something like (return (dot this x) should lead here. Should return the field x from "this"
+                                                 ;getBinding (vars-list of instance-closure) var
+      [(eq? (operator statement) 'dot)      (getBinding (cadr (getBinding state (leftoperand statement))) (rightoperand statement))] 
+      [(eq? (operator statement) 'funcall) (M_func_value (M_dot (function-name statement) state compileType runtimeType) (cons (getBinding state (leftoperand (function-name statement))) (var-value-list statement)) state
                                                          (lambda (a) a) breakError continueError (lambda (e s) (throw e state)) compileType runtimeType)]
       [(eq? (operator statement) 'new)     (instance-closure (cadr statement) state)]
       [else                                (error "invalid operator")])))
@@ -214,7 +217,9 @@
   (lambda (params args fstate state compileType runtimeType)
     (if (or (null? params) (null? args))
         (bothListsEmpty params args fstate)
-        (bindParameters (cdr params) (cdr args) (addBinding fstate (car params) (M_value (car args) state throwError compileType runtimeType)) state compileType runtimeType))))
+        (if (eq? (car params) 'this)
+            (bindParameters (cdr params) (cdr args) (addBinding fstate (car params) (car args)) state compileType runtimeType)  ;< ---- Update to not call M_value on the instance closure of 'this (currently just skiping the first param and arg check)
+            (bindParameters (cdr params) (cdr args) (addBinding fstate (car params) (M_value (car args) state throwError compileType runtimeType)) state compileType runtimeType)))))
 
 ; Evaluate a statement, and modify the state accordingly
 (define M_statement
@@ -222,8 +227,8 @@
     (cond
       [(eq? (operator statement) 'var)      (M_declare statement state throw compileType runtimeType)]
       [(eq? (operator statement) 'function) (M_function statement state compileType runtimeType)]
-      [(eq? (operator statement) 'funcall)  (M_func_state (M_dot (function-name statement) state compileType runtimeType) (cons compileType (var-value-list statement)) state
-                                                          return break continue throw compileType runtimeType)]
+      [(eq? (operator statement) 'funcall)  (M_func_state (M_dot (function-name statement) state compileType runtimeType) (cons (getBinding state (leftoperand (function-name statement))) (var-value-list statement)) state
+                                                         return break continue throw compileType runtimeType)]
       [(eq? (operator statement) '=)        (M_assignment statement state throw compileType runtimeType)]
       [(eq? (operator statement) 'return)   (M_return statement state return throw compileType runtimeType)]
       [(eq? (operator statement) 'if)       (M_if statement state return break continue throw compileType runtimeType)]
@@ -261,10 +266,20 @@
 
 ; --------------------- STATEMENT STATE FUNCTIONS ---------------------
 
-(define fields-list cadr)
+(define fields-list cadddr)
+
+#|
+
+         The instance closure needs to be a copy of instance variables from the class-closure.
+         Currently just copies the from class-closure instance-fields which uses boxes. Meaning changing for one
+         instance changes for all the others.
+
+|#
+
 
 (define instance-closure
   (lambda (classname state)
+    ; a list of: classname (fields)
     (list classname (fields-list (getBinding state classname)))))
 
 ; Used when calling a function to reduce the state to the scope of which it was defined.
@@ -327,6 +342,9 @@
       [(eq? (caar class-body) 'static-function) (get-class-static-methods class-name (cdr class-body) (M_function 'static class-name (car class-body) state no-type no-type))]
       [else                               (get-class-static-methods class-name (cdr class-body) state)])))
 
+;--
+;-- Needs to be updated to call M_value on the instance field value so that a value is stored and not any expressions ---;
+;--
 (define get-class-instance-fields
   (lambda (class-body state)
     (cond
@@ -432,8 +450,11 @@
 ; Processes statement in the form (= var val) and retuns an updated state.
 ; Updates binding of var with val in the state.
 (define M_assignment
-   (lambda (statement state throw)
-     (updateBinding state (var-name statement) (M_value (var-value statement) state throw))))
+   (lambda (statement state throw compileType runtimeType)
+     (if (eq? (caadr statement) 'dot) ;check if assinging to a dot (dot this a) which is (dot class-instance-name instance-var)
+         (updateBinding (cadr (getBinding state (cadr (cadr statement)))) (caddr (cadr statement)) (M_value (caddr statement) state throw compileType runtimeType)); (= (dot this a) 10)
+         (updateBinding state (var-name statement) (M_value (var-value statement) state throw compileType runtimeType))))); (= var val)
+                                                                                                                      
 
 ; Processes statement in one of two forms and returns an updated state.
 ; (var x): Adds binding x to the state with initial value 'error.
@@ -576,3 +597,6 @@
 (define var-value caddr)
 (define var-value-list cddr)
 (define rest-of-state cdr)
+
+; (define state (interpret "tests/1" 'A)
+; (define cclosure (getBinding state 'A))
