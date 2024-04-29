@@ -3,6 +3,7 @@ class A {
   var y = 10;
 
   static function main() {
-    return 10;
+    var a = new A();
+    return a.x + a.y;
   }
 }

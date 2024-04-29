@@ -148,6 +148,7 @@
       [(eq? (operator exp) '/)                                        (quotient (M_integer (leftoperand exp) state throw compileType runtimeType) (M_integer (rightoperand exp) state throw compileType runtimeType))]
       [(eq? (operator exp) '%)                                        (remainder (M_integer (leftoperand exp) state throw compileType runtimeType) (M_integer (rightoperand exp) state throw compileType runtimeType))]
       [(eq? (operator exp) 'funcall)                                  (M_value exp state throw compileType runtimeType)]
+      [(eq? (operator exp) 'dot)                                      (M_dot exp state compileType runtimeType)]
       [else                                                           (error "Not an Integer: " exp)])))
 
 ; Handles the evaluation of any general expression.
