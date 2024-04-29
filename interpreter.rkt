@@ -15,22 +15,23 @@
 (define interpret-outer-acc
   (lambda (syntax-tree classname state)
     (if (null? syntax-tree)
-        (interpret-main (get-classname-main-body state classname) state) ; Just get the body of the main function
-        (interpret-outer-acc (rest-of-tree syntax-tree) classname (M_statement (curr-statement syntax-tree) state returnError breakError continueError throwError)))))
+        (interpret-main (get-classname-main-body state classname) state classname classname) ; Just get the body of the main function
+        ; state
+        (interpret-outer-acc (rest-of-tree syntax-tree) classname (M_statement (curr-statement syntax-tree) state returnError breakError continueError throwError 1 1)))))
 
 (define interpret-main
-  (lambda (main-body state)
-    (interpret-inner main-body state returnError breakError continueError throwError)))
+  (lambda (main-body state compileType runtimeType)
+    (interpret-inner main-body state returnError breakError continueError throwError compileType runtimeType)))
 
 ; Interprets the statements in function. Each statement will return a state that will be used to evalute
 ; the next statement. When return is called in the program, then then return continuation is called,
 ; moving out of the function. 
 (define interpret-inner
-  (lambda (syntax-tree state return break continue throw)
+  (lambda (syntax-tree state return break continue throw compileType runtimeType)
     (call/cc (lambda (newReturn) (interpret-inner-acc syntax-tree state newReturn break continue throw)))))
 
 (define interpret-inner-acc
-  (lambda (syntax-tree state return break continue throw)
+  (lambda (syntax-tree state return break continue throw compileType runtimeType)
     (if (null? syntax-tree)
         (return "error")
         (interpret-inner-acc (rest-of-tree syntax-tree) (M_statement (curr-statement syntax-tree) state return break continue throw) return break continue throw))))
@@ -190,7 +191,7 @@
       (interpret-inner
        (closure_body closure)
        (bindParameters (closure_formal_params closure) argList (add-layer ((closure_func closure) state)) state)
-       return break continue throw)
+       return break continue throw compileType runtimeType)
      state)))
 
 ; Bind each passed parameter with its variable name in the state
@@ -207,8 +208,8 @@
       [(eq? (operator statement) 'var)      (M_declare statement state throw)]
       [(eq? (operator statement) 'function) (M_function statement state)]
       [(eq? (operator statement) 'funcall)  (M_func_state (getBinding state (function-name statement)) (var-value-list statement) state
-                                                          return break continue throw)]
-      [(eq? (operator statement) '=)        (M_assignment statement state throw)]
+                                                          return break continue throw compileType runtimeType)]
+      [(eq? (operator statement) '=)        (M_assignment statement state throw compileType runtimeType)]
       [(eq? (operator statement) 'return)   (M_return statement state return throw)]
       [(eq? (operator statement) 'if)       (M_if statement state return break continue throw)]
       [(eq? (operator statement) 'while)    (M_while statement state return break continue throw)]
@@ -217,13 +218,15 @@
       [(eq? (operator statement) 'continue) (continue state)]
       [(eq? (operator statement) 'break)    (break state)]
       [(eq? (operator statement) 'throw)    (throw (M_value (throw-value statement) state throw) state)]
-      [(eq? (operator statement) 'class)    (M_class statement state)])))
+      [(eq? (operator statement) 'class)    (M_class statement state compileType runtimeType)])))
 
 (define get-class-name cadr)
 
 (define M_class
-  (lambda (statement state)
-    (addBinding state (get-class-name statement) (make-class-closure statement))))
+  (lambda (statement state compileType runtimeType)
+    (if? (and (null? compileType) (null? runtimeType))
+         (addBinding state (get-class-name statement) (make-class-closure statement))
+         (error "Nested classes are not permitted.")))
 
 ; Takes in a function definition and creates a closure of the function to be added to the state.
 (define M_function
