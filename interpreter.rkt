@@ -154,7 +154,7 @@
 
 (define get-val-from-instance-fields-of-runtime-type
   (lambda (var class-closure runtimeType)
-    (find-me var (cadddr class-closure)))) ;<------
+    (getBinding (cadddr class-closure) var))) ;<------
 
 (define find-me
   (lambda (var lis)
