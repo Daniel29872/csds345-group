@@ -15,9 +15,9 @@
 (define interpret-outer-acc
   (lambda (syntax-tree classname state)
     (if (null? syntax-tree)
-        (interpret-main (get-classname-main-body state classname) state classname classname) ; Just get the body of the main function
-        ; state
-        (interpret-outer-acc (rest-of-tree syntax-tree) classname (M_statement (curr-statement syntax-tree) state returnError breakError continueError throwError 1 1)))))
+        (interpret-main (get-classname-main-body state classname) state) ; Just get the body of the main function
+        ;state
+        (interpret-outer-acc (rest-of-tree syntax-tree) classname (M_statement (curr-statement syntax-tree) state returnError breakError continueError throwError)))))
 
 (define interpret-main
   (lambda (main-body state compileType runtimeType)
@@ -230,8 +230,8 @@
 
 ; Takes in a function definition and creates a closure of the function to be added to the state.
 (define M_function
-  (lambda (statement state)
-    (addBinding state (function-name statement) (make-closure (function-name statement) (formal-params statement) (function-body statement) state))))
+  (lambda (class-name statement state)
+    (addBinding state (function-name statement) (make-closure class-name (function-name statement) (formal-params statement) (function-body statement) state))))
 
 
 
@@ -252,11 +252,12 @@
 
 ; Generates the function closure using the given function name, parameters, body, and the state.
 (define make-closure
-  (lambda (funcname formalparams body state)
-    (list formalparams body (lambda (s) (restore-scope s funcname)))))
+  (lambda (classname funcname formalparams body state)
+    (list formalparams body (lambda (s) (restore-scope s funcname)) classname)))
 
 (define super-class-list caddr)
 (define super-class-name cdr)
+(define class-name cadr)
 
 (define get-super-class
   (lambda (super-class-lst)
@@ -267,18 +268,18 @@
 (define make-class-closure
   (lambda (class)
     ; a list of: superclass (methods) (static-methods) (fields) (static-fields)
-    (list (get-super-class (super-class-list class)) (get-class-methods (get-class-body class) (new-state)) (get-class-static-methods (get-class-body class) (new-state)) (get-class-instance-fields (get-class-body class)) (get-class-static-fields (get-class-body class)))))
+    (list (get-super-class (super-class-list class)) (get-class-methods (class-name class) (get-class-body class) (new-state)) (get-class-static-methods (class-name class) (get-class-body class) (new-state)) (get-class-instance-fields (get-class-body class)) (get-class-static-fields (get-class-body class)))))
 
 (define get-class-body
   (lambda (class)
     (cadddr class)))
 
 (define get-class-methods
-  (lambda (class-body state)
+  (lambda (class-name class-body state)
     (cond
       [(null? class-body) state]
-      [(eq? (caar class-body) 'function) (get-class-methods (cdr class-body) (M_function (car class-body) state))]
-      [else                       (get-class-methods (cdr class-body) state)])))
+      [(eq? (caar class-body) 'function) (get-class-methods class-name (cdr class-body) (M_function class-name (car class-body) state))]
+      [else                       (get-class-methods class-name (cdr class-body) state)])))
 
 (define get-class-static-fields
   (lambda (class-body)
@@ -288,11 +289,11 @@
       [else                               (get-class-static-fields (cdr class-body))])))
 
 (define get-class-static-methods
-  (lambda (class-body state)
+  (lambda (class-name class-body state)
     (cond
       [(null? class-body) state]
-      [(eq? (caar class-body) 'static-function) (get-class-static-methods (cdr class-body) (M_function (car class-body) state))]
-      [else                               (get-class-static-methods (cdr class-body) state)])))
+      [(eq? (caar class-body) 'static-function) (get-class-static-methods class-name (cdr class-body) (M_function class-name (car class-body) state))]
+      [else                               (get-class-static-methods class-name (cdr class-body) state)])))
 
 (define get-class-instance-fields
   (lambda (class-body)
