@@ -9,6 +9,7 @@
   (lambda (filename classname)
     (interpret-outer-acc (parser filename) classname (new-state))))
 
+(define get-methods cadr)
 (define get-static-methods caddr)
 (define no-type 'NoType)
 
@@ -16,8 +17,8 @@
 (define interpret-outer-acc
   (lambda (syntax-tree classname state)
     (if (null? syntax-tree)
-        (interpret-main (get-classname-main-body state classname) state classname classname) ; Just get the body of the main function
-        ;state
+        ;(interpret-main (get-classname-main-body state classname) state classname classname) ; Just get the body of the main function
+        state
         (interpret-outer-acc (rest-of-tree syntax-tree) classname (M_statement (curr-statement syntax-tree) state returnError breakError continueError throwError no-type no-type)))))
 
 (define interpret-main
@@ -228,6 +229,7 @@
   (lambda (statement state compileType runtimeType)
     (getBinding (cadr (getBinding state (car (getBinding state (cadr statement))))) (caddr statement))))
 
+; Create a binding for a class definition
 (define M_class
   (lambda (statement state compileType runtimeType)
     (if (and (eq? compileType no-type) (eq? runtimeType no-type)) ; Do not allow class creation within another class
@@ -427,6 +429,21 @@
 
 
 ; --------------------- HELPER FUNCTIONS ---------------------
+
+; Used with getBinding to get a method closure from a class closure stored in the state.
+(define get-method-from-class
+  (lambda (func classname closure)
+    (get-method-from-class-acc func classname (append (get-methods closure) (get-static-methods closure)))))
+
+(define get-method-from-class-acc
+  (lambda (func classname methods)
+    (cond
+      [(null? methods) (error "Class " classname " does not have function " func)]
+      [(eq? (unbox (method-name methods)) func) (unbox (method-closure methods))]
+      [else (get-method-from-class-acc func classname (rest-of-list methods))])))
+
+(define method-name caaar)
+(define method-closure caadar)
 
 ; Add the variable/value pair to the layer of the state
 (define add-to-layer
