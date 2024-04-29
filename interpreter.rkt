@@ -432,8 +432,8 @@
 ; Processes statement in the form (= var val) and retuns an updated state.
 ; Updates binding of var with val in the state.
 (define M_assignment
-   (lambda (statement state throw)
-     (updateBinding state (var-name statement) (M_value (var-value statement) state throw))))
+   (lambda (statement state throw compileType runtimeType)
+     (updateBinding state (var-name statement) (M_value (var-value statement) state throw compileType runtimeType))))
 
 ; Processes statement in one of two forms and returns an updated state.
 ; (var x): Adds binding x to the state with initial value 'error.
