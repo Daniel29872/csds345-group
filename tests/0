@@ -1,6 +1,9 @@
 class A {
+  function test(){
+	return 6;
+  }
   static function main() {
-    a.x();
+    a.test();
     return 10;
   }
 }
