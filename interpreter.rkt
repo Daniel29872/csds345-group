@@ -193,18 +193,19 @@
       [(eq? (operator statement) 'new)     (instance-closure (cadr statement) state)]
       [else                                (error "invalid operator")])))
 
+; Handle the case where a new class is created and immediately accessed with the dot operator
 (define handleNewDot
   (lambda (state statement)
     (if (list? (class-name (function-name statement)))
-        (instance-closure (class-name (function-name (function-name statement))) state)
-        (getBinding state (leftoperand (function-name statement))))))
+        (instance-closure (class-name (function-name (function-name statement))) state) ; <- new A().x
+        (getBinding state (leftoperand (function-name statement))))))                   ; <- var a = new A(); a.x
 
 ; returns the value of a field of a class instance
 (define M_dot_value
   (lambda (statement state throw compileType runtimeType)
     (cond
-      [(list? (leftoperand statement)) (getBinding (cadddr (getBinding state (cadr (leftoperand statement)))) (rightoperand statement))]
-      [else (getBinding (cadr (getBinding state (leftoperand statement))) (rightoperand statement))])))
+      [(list? (leftoperand statement)) (getBinding (get-class-body (getBinding state (leftoperand (leftoperand statement)))) (rightoperand statement))]
+      [else (getBinding (leftoperand (getBinding state (leftoperand statement))) (rightoperand statement))])))
 
 ; Interprets a function body and returns the value after going through the body of the function.
 (define M_func_value
@@ -260,6 +261,9 @@
 (define M_dot
   (lambda (statement state throw compileType runtimeType)
     (cond
+      [(eq? (leftoperand statement) 'super)
+       
+       ]
       [(list? (leftoperand statement))
        (get-method-from-class
         (rightoperand statement)
