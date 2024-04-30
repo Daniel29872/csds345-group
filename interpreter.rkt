@@ -195,8 +195,8 @@
 
 (define handleNewDot
   (lambda (state statement)
-    (if (list? (cadr (cadr statement)))
-        (M_value (cadr (cadr statement)) state 'err 'err 'err)
+    (if (list? (class-name (function-name statement)))
+        (instance-closure (class-name (function-name (function-name statement))) state)
         (getBinding state (leftoperand (function-name statement))))))
 
 ; returns the value of a field of a class instance
