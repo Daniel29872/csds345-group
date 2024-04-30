@@ -17,8 +17,8 @@
 (define interpret-outer-acc
   (lambda (syntax-tree classname state)
     (if (null? syntax-tree)
-        ;(interpret-main (get-classname-main-body state classname) state classname classname) ; Just get the body of the main function
-        state
+        (interpret-main (get-classname-main-body state classname) state classname classname) ; Just get the body of the main function
+        ;state
         (interpret-outer-acc (rest-of-tree syntax-tree) classname (M_statement (curr-statement syntax-tree) state returnError breakError continueError throwError no-type no-type)))))
 
 (define interpret-main
@@ -38,7 +38,7 @@
         (return "error")
         (interpret-inner-acc (rest-of-tree syntax-tree) (M_statement (curr-statement syntax-tree) state return break continue throw compileType runtimeType) return break continue throw compileType runtimeType))))
 
-#| ---------PART _ ADDITIONS--------- |#
+#| ---------PART 4 ADDITIONS--------- |#
 
 (define get-classname-main-body
   (lambda (state classname)
@@ -290,13 +290,13 @@
          (addBinding state (get-class-name statement) (add-super-closure (make-class-closure statement) state))
          (error "Nested classes are not permitted."))))
 
-; a list of: superclass (methods) (static-methods) (fields) (static-fields)
+; an attempt at implementing the method discussed in class: store all super class fields/methods appended to the class's own fields/methods
 (define add-super-closure
   (lambda (closure state)
     (if (eq? (caar closure) 'None)
         closure ; If no super type, return the closure as is
         (list
-         (caar closure) ; add super class name to list
+         (car closure) ; add super class name to list
          (append (cadr closure) (cadr (getBinding state (caar closure)))) ; add super methods to list
          (append (caddr closure) (caddr (getBinding state (caar closure)))) ; add super static methods to list
          (append (cadddr closure) (cadddr (getBinding state (caar closure)))) ; add super fields to list
