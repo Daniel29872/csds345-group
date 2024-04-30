@@ -17,8 +17,8 @@
 (define interpret-outer-acc
   (lambda (syntax-tree classname state)
     (if (null? syntax-tree)
-        (interpret-main (get-classname-main-body state classname) state classname classname) ; Just get the body of the main function
-        ;state
+        ;(interpret-main (get-classname-main-body state classname) state classname classname) ; Just get the body of the main function
+        state
         (interpret-outer-acc (rest-of-tree syntax-tree) classname (M_statement (curr-statement syntax-tree) state returnError breakError continueError throwError no-type no-type)))))
 
 (define interpret-main
@@ -104,7 +104,6 @@
       [(null? state)                                   (error "using before declaring" var)]
       [(var-in-layer-vars? (top-layer-vars state) var) (cons (update-layer-binding (top-layer state) var val) (rest-of-layers state))]
       [else                                            (cons (top-layer state) (updateBinding (rest-of-layers state) var val))])))
-
 
 
 ; --------------------- EVALUATION STATE FUNCTIONS ---------------------
@@ -288,8 +287,20 @@
 (define M_class
   (lambda (statement state compileType runtimeType)
     (if (and (eq? compileType no-type) (eq? runtimeType no-type)) ; Do not allow class creation within another class
-         (addBinding state (get-class-name statement) (make-class-closure statement))
+         (addBinding state (get-class-name statement) (add-super-closure (make-class-closure statement) state))
          (error "Nested classes are not permitted."))))
+
+; a list of: superclass (methods) (static-methods) (fields) (static-fields)
+(define add-super-closure
+  (lambda (closure state)
+    (if (eq? (caar closure) 'None)
+        closure ; If no super type, return the closure as is
+        (list
+         (caar closure) ; add super class name to list
+         (append (cadr closure) (cadr (getBinding state (caar closure)))) ; add super methods to list
+         (append (caddr closure) (caddr (getBinding state (caar closure)))) ; add super static methods to list
+         (append (cadddr closure) (cadddr (getBinding state (caar closure)))) ; add super fields to list
+         (append (cadddr (cdr closure)) (cadddr (cdr (getBinding state (caar closure))))))))) ; add super static fields to list
 
 ; Takes in a function definition and creates a closure of the function to be added to the state.
 (define M_function
