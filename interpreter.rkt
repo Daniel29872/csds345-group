@@ -17,8 +17,8 @@
 (define interpret-outer-acc
   (lambda (syntax-tree classname state)
     (if (null? syntax-tree)
-        ;(interpret-main (get-classname-main-body state classname) state classname classname) ; Just get the body of the main function
-        state
+        (interpret-main (get-classname-main-body state classname) state classname classname) ; Just get the body of the main function
+        ;state
         (interpret-outer-acc (rest-of-tree syntax-tree) classname (M_statement (curr-statement syntax-tree) state returnError breakError continueError throwError no-type no-type)))))
 
 (define interpret-main
@@ -186,11 +186,26 @@
       [(eq? (operator statement) '!)       (M_boolean statement state throw compileType runtimeType)]
                                                  ;v---- something like (return (dot this x) should lead here. Should return the field x from "this"
                                                  ;getBinding (vars-list of instance-closure) var
-      [(eq? (operator statement) 'dot)      (getBinding (cadr (getBinding state (leftoperand statement))) (rightoperand statement))] 
-      [(eq? (operator statement) 'funcall) (M_func_value (M_dot (function-name statement) state compileType runtimeType) (cons (getBinding state (leftoperand (function-name statement))) (var-value-list statement)) state
-                                                         (lambda (a) a) breakError continueError (lambda (e s) (throw e state)) compileType runtimeType)]
+      [(eq? (operator statement) 'dot)     (M_dot_value statement state throw compileType runtimeType)] 
+      [(eq? (operator statement) 'funcall) (M_func_value (M_dot (function-name statement) state throw compileType runtimeType)
+                                                         (cons (handleNewDot state statement) (var-value-list statement))
+                                                         state (lambda (a) a) breakError continueError (lambda (e s) (throw e state)) compileType runtimeType)]
       [(eq? (operator statement) 'new)     (instance-closure (cadr statement) state)]
       [else                                (error "invalid operator")])))
+
+(define handleNewDot
+  (lambda (state statement)
+    (if (list? statement)
+        (cadr (leftoperand statement))
+        (getBinding state (leftoperand (function-name statement))))))
+
+; returns the value of a field of a class instance
+(define M_dot_value
+  (lambda (statement state throw compileType runtimeType)
+    (begin (display state)
+    (cond
+      [(list? (leftoperand statement)) (getBinding (cadddr (getBinding state (cadr (leftoperand statement)))) (rightoperand statement))]
+      [else (getBinding (cadr (getBinding state (leftoperand statement))) (rightoperand statement))]))))
 
 ; Interprets a function body and returns the value after going through the body of the function.
 (define M_func_value
@@ -225,8 +240,9 @@
     (cond
       [(eq? (operator statement) 'var)      (M_declare statement state throw compileType runtimeType)]
       [(eq? (operator statement) 'function) (M_function statement state compileType runtimeType)]
-      [(eq? (operator statement) 'funcall)  (M_func_state (M_dot (function-name statement) state compileType runtimeType) (cons (getBinding state (leftoperand (function-name statement))) (var-value-list statement)) state
-                                                         return break continue throw compileType runtimeType)]
+      [(eq? (operator statement) 'funcall)  (M_func_state (M_dot (function-name statement) state throw compileType runtimeType)
+                                                         (cons (handleNewDot state statement) (var-value-list statement))
+                                                         state return break continue throw compileType runtimeType)]
       [(eq? (operator statement) '=)        (M_assignment statement state throw compileType runtimeType)]
       [(eq? (operator statement) 'return)   (M_return statement state return throw compileType runtimeType)]
       [(eq? (operator statement) 'if)       (M_if statement state return break continue throw compileType runtimeType)]
@@ -243,11 +259,18 @@
 
 ; returns the closure of the method from using either the runtime type or the compile time type
 (define M_dot
-  (lambda (statement state compileType runtimeType)
-    (get-method-from-class
-     (rightoperand statement)
-     (instance-class (getBinding state (leftoperand statement)))
-     (getBinding state (instance-class (getBinding state (leftoperand statement)))))))
+  (lambda (statement state throw compileType runtimeType)
+    (cond
+      [(list? (leftoperand statement))
+       (get-method-from-class
+        (rightoperand statement)
+        (cadr (leftoperand statement))
+        (getBinding state (cadr (leftoperand statement))))]
+      [else
+       (get-method-from-class
+        (rightoperand statement)
+        (instance-class (getBinding state (leftoperand statement)))
+        (getBinding state (instance-class (getBinding state (leftoperand statement)))))])))
 
 ; Create a binding for a class definition
 (define M_class
