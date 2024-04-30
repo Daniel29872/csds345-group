@@ -365,6 +365,12 @@
         (list 'None)
         (super-class-name super-class-lst))))
 
+(define append-super-class-instance-fields
+  (lambda (vars-list vals-list super-vars super-vals)
+    (if (null? super-vars)
+        (cons vars-list (list vals-list))
+        (append-super-class-instance-fields (append vars-list (list (car super-vars))) (append vals-list (list (car super-vals))) (cdr super-vars) (cdr super-vals)))))
+
 (define make-class-closure
   (lambda (class)
     ; a list of: superclass (methods) (static-methods) (fields) (static-fields)
