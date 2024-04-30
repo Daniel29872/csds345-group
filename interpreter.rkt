@@ -183,8 +183,6 @@
       [(eq? (operator statement) '&&)      (M_boolean statement state throw compileType runtimeType)]
       [(eq? (operator statement) '||)      (M_boolean statement state throw compileType runtimeType)]
       [(eq? (operator statement) '!)       (M_boolean statement state throw compileType runtimeType)]
-                                                 ;v---- something like (return (dot this x) should lead here. Should return the field x from "this"
-                                                 ;getBinding (vars-list of instance-closure) var
       [(eq? (operator statement) 'dot)     (M_dot_value statement state throw compileType runtimeType)] 
       [(eq? (operator statement) 'funcall) (M_func_value (M_dot (function-name statement) state throw compileType runtimeType)
                                                          (cons (handleNewDot state statement compileType runtimeType) (var-value-list statement))
@@ -198,12 +196,12 @@
         'None
         (caar (getBinding state runtimeType)))))
 
-; update to return a new intance type for (dot super a)
+; Returns an instance closure, for a new class instance, a super class, or retrieves an instance closure already created
 (define handleNewDot
   (lambda (state statement compileType runtimeType)
     (cond
       [(list? (cadr (cadr statement)))      (M_value (cadr (cadr statement)) state 'err 'err 'err)]
-      [(eq? (cadr (cadr statement)) 'super) (instance-closure (caar (getBinding state runtimeType)) state)];<--- should return a new instance of the super class
+      [(eq? (cadr (cadr statement)) 'super) (instance-closure (caar (getBinding state runtimeType)) state)]
       [else                                 (getBinding state (leftoperand (function-name statement)))])))
 
 ; returns the value of a field of a class instance
@@ -276,7 +274,7 @@
        (get-method-from-class
         (rightoperand statement)
         'err
-        (getBinding state (caar (getBinding state runtimeType))))] ;<--- get the superclass name of the runtimeType
+        (getBinding state (caar (getBinding state runtimeType))))]
       [else
        (get-method-from-class
         (rightoperand statement)
@@ -326,15 +324,6 @@
 
 (define classname-from-closure car)
 
-#|
-
-         The instance closure needs to be a copy of instance variables from the class-closure.
-         Currently just copies the from class-closure instance-fields which uses boxes. Meaning changing for one
-         instance changes for all the others.
-
-|#
-
-
 (define instance-closure
   (lambda (classname state)
     ; a list of: classname (fields)
@@ -371,9 +360,9 @@
         (cons vars-list (list vals-list))
         (append-super-class-instance-fields (append vars-list (list (car super-vars))) (append vals-list (list (car super-vals))) (cdr super-vars) (cdr super-vals)))))
 
+; returns the closure for the given class, which has all items in states of the form: superclass (methods) (static-methods) (fields) (static-fields)
 (define make-class-closure
   (lambda (class)
-    ; a list of: superclass (methods) (static-methods) (fields) (static-fields)
     (list
      (get-super-class (super-class-list class))
      (get-class-methods (class-name class) (get-class-body class) (new-state))
@@ -385,6 +374,7 @@
   (lambda (class)
     (cadddr class)))
 
+; returns a state containing all the methods in a given class
 (define get-class-methods
   (lambda (class-name class-body state)
     (cond
@@ -392,6 +382,7 @@
       [(eq? (caar class-body) 'function) (get-class-methods class-name (cdr class-body) (M_function 'not-static class-name (car class-body) state no-type no-type))]
       [else                       (get-class-methods class-name (cdr class-body) state)])))
 
+; returns a state containing all the static-fields in a given class
 (define get-class-static-fields
   (lambda (class-body)
     (cond
@@ -399,6 +390,7 @@
       [(eq? (caar class-body) 'static-var) (cons (car class-body) (get-class-static-fields (cdr class-body)))]
       [else                               (get-class-static-fields (cdr class-body))])))
 
+; returns a state containing all the static methods in a given class
 (define get-class-static-methods
   (lambda (class-name class-body state)
     (cond
@@ -406,9 +398,7 @@
       [(eq? (caar class-body) 'static-function) (get-class-static-methods class-name (cdr class-body) (M_function 'static class-name (car class-body) state no-type no-type))]
       [else                               (get-class-static-methods class-name (cdr class-body) state)])))
 
-;--
-;-- Needs to be updated to call M_value on the instance field value so that a value is stored and not any expressions ---;
-;--
+; returns a state containing all the instance fields in a given class
 (define get-class-instance-fields
   (lambda (class-body state)
     (cond
@@ -537,7 +527,6 @@
 (define get-method-from-class
   (lambda (func classname closure)
     (getBinding (cadr closure) func)))
-    ;(get-method-from-class-acc func classname (cadr closure)))) ;<-- does not return the instance methods if support wanted.
 
 (define get-method-from-class-acc
   (lambda (func classname methods)
