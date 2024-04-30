@@ -147,12 +147,12 @@
       [(eq? (operator exp) '/)                                        (quotient (M_integer (leftoperand exp) state throw compileType runtimeType) (M_integer (rightoperand exp) state throw compileType runtimeType))]
       [(eq? (operator exp) '%)                                        (remainder (M_integer (leftoperand exp) state throw compileType runtimeType) (M_integer (rightoperand exp) state throw compileType runtimeType))]
       [(eq? (operator exp) 'funcall)                                  (M_value exp state throw compileType runtimeType)]
-      [(eq? (operator exp) 'dot)                                      (get-val-from-instance-fields-of-runtime-type (caddr exp) (getBinding state compileType) runtimeType)]; create a dot function to should determine if need to use the compileType or the runtimeType
+      [(eq? (operator exp) 'dot)                                      (get-val-from-instance-fields-of-runtime-type (caddr exp) (getBinding state (cadr exp)) runtimeType)]; create a dot function to should determine if need to use the compileType or the runtimeType
       [else                                                           (error "Not an Integer: " exp)])))
 
-(define get-val-from-instance-fields-of-runtime-type
-  (lambda (var class-closure runtimeType)
-    (getBinding (cadddr class-closure) var))) ;<------
+(define get-val-from-instance-fields-of-runtime-type ;<-- needs to be updated to retrieve from the instance closure instead of the class closure
+  (lambda (var iclosure runtimeType)
+    (getBinding (cadr iclosure) var))) ;<------
 
 (define find-me
   (lambda (var lis)
@@ -315,7 +315,7 @@
 (define instance-closure
   (lambda (classname state)
     ; a list of: classname (fields)
-    (list classname (fields-list (getBinding state classname)))))
+    (list classname (list (fields-list (getBinding state classname))))))
 
 ; Used when calling a function to reduce the state to the scope of which it was defined.
 (define restore-scope
@@ -636,3 +636,7 @@
 
 ; (define state (interpret "tests/1" 'A)
 ; (define cclosure (getBinding state 'A))
+
+;(define state (interpret "tests/4" 'A))
+;(define iclosure (instance-closure 'A state))
+;iclosure
