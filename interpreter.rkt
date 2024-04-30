@@ -189,19 +189,23 @@
       [(eq? (operator statement) 'dot)     (M_dot_value statement state throw compileType runtimeType)] 
       [(eq? (operator statement) 'funcall) (M_func_value (M_dot (function-name statement) state throw compileType runtimeType)
                                                          (cons (handleNewDot state statement compileType runtimeType) (var-value-list statement))
-                                                         state (lambda (a) a) breakError continueError (lambda (e s) (throw e state)) compileType (get-super state runtimeType))]
+                                                         state (lambda (a) a) breakError continueError (lambda (e s) (throw e state)) compileType (getSuperType runtimeType state))]
       [(eq? (operator statement) 'new)     (instance-closure (cadr statement) state)]
       [else                                (error "invalid operator")])))
 
-; Handles the various cases of usage of the dot operator
+(define getSuperType
+  (lambda (runtimeType state)
+    (if (eq? runtimeType 'None)
+        'None
+        (caar (getBinding state runtimeType)))))
+
+; update to return a new intance type for (dot super a)
 (define handleNewDot
   (lambda (state statement compileType runtimeType)
     (cond
-      [(eq? (class-name (function-name statement)) 'super)
-            (instance-closure (get-super state runtimeType) state)] ; super.x
-      [(list? (class-name (function-name statement)))
-            (instance-closure (class-name (function-name (function-name statement))) state)] ; new A().x
-      [else (getBinding state (leftoperand (function-name statement)))]))) ; var a = new A(); a.x
+      [(list? (cadr (cadr statement)))      (M_value (cadr (cadr statement)) state 'err 'err 'err)]
+      [(eq? (cadr (cadr statement)) 'super) (instance-closure (caar (getBinding state runtimeType)) state)];<--- should return a new instance of the super class
+      [else                                 (getBinding state (leftoperand (function-name statement)))])))
 
 ; returns the value of a field of a class instance
 (define M_dot_value
@@ -245,7 +249,7 @@
       [(eq? (operator statement) 'function) (M_function statement state compileType runtimeType)]
       [(eq? (operator statement) 'funcall)  (M_func_state (M_dot (function-name statement) state throw compileType runtimeType)
                                                          (cons (handleNewDot state statement compileType runtimeType) (var-value-list statement))
-                                                         state return break continue throw compileType (get-super state runtimeType))]
+                                                         state return break continue throw compileType runtimeType)]
       [(eq? (operator statement) '=)        (M_assignment statement state throw compileType runtimeType)]
       [(eq? (operator statement) 'return)   (M_return statement state return throw compileType runtimeType)]
       [(eq? (operator statement) 'if)       (M_if statement state return break continue throw compileType runtimeType)]
@@ -282,6 +286,11 @@
         (rightoperand statement)
         (leftoperand (leftoperand statement))
         (getBinding state (cadr (leftoperand statement))))]
+      [(eq? (cadr statement) 'super)
+       (get-method-from-class
+        (rightoperand statement)
+        'err
+        (getBinding state (caar (getBinding state runtimeType))))] ;<--- get the superclass name of the runtimeType
       [else
        (get-method-from-class
         (rightoperand statement)
@@ -355,7 +364,7 @@
 (define get-super-class
   (lambda (super-class-lst)
     (if (null? super-class-lst)
-        'None
+        (list 'None)
         (super-class-name super-class-lst))))
 
 (define make-class-closure
