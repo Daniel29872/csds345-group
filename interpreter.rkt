@@ -261,13 +261,10 @@
 (define M_dot
   (lambda (statement state throw compileType runtimeType)
     (cond
-      [(eq? (leftoperand statement) 'super)
-       
-       ]
       [(list? (leftoperand statement))
        (get-method-from-class
         (rightoperand statement)
-        (cadr (leftoperand statement))
+        (leftoperand (leftoperand statement))
         (getBinding state (cadr (leftoperand statement))))]
       [else
        (get-method-from-class
