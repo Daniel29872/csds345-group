@@ -287,7 +287,7 @@
 (define M_class
   (lambda (statement state compileType runtimeType)
     (if (and (eq? compileType no-type) (eq? runtimeType no-type)) ; Do not allow class creation within another class
-         (addBinding state (get-class-name statement) (add-super-closure (make-class-closure statement) state))
+         (addBinding state (get-class-name statement) (make-class-closure statement)) ; <--- where add-super-closure would be used...
          (error "Nested classes are not permitted."))))
 
 ; an attempt at implementing the method discussed in class: store all super class fields/methods appended to the class's own fields/methods
