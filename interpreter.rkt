@@ -195,17 +195,16 @@
 
 (define handleNewDot
   (lambda (state statement)
-    (if (list? statement)
-        (cadr (leftoperand statement))
+    (if (list? (cadr (cadr statement)))
+        (M_value (cadr (cadr statement)) state 'err 'err 'err)
         (getBinding state (leftoperand (function-name statement))))))
 
 ; returns the value of a field of a class instance
 (define M_dot_value
   (lambda (statement state throw compileType runtimeType)
-    (begin (display state)
     (cond
       [(list? (leftoperand statement)) (getBinding (cadddr (getBinding state (cadr (leftoperand statement)))) (rightoperand statement))]
-      [else (getBinding (cadr (getBinding state (leftoperand statement))) (rightoperand statement))]))))
+      [else (getBinding (cadr (getBinding state (leftoperand statement))) (rightoperand statement))])))
 
 ; Interprets a function body and returns the value after going through the body of the function.
 (define M_func_value
